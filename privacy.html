@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Politique de confidentialité — RSE Transport Patoo</title>
+<style>
+  :root{
+    --bg:#12181A; --card:#1B2326; --ink:#F3F5F1; --inkSoft:#8FA098;
+    --line:#2C3A3D; --accent:#E3A542; --violation:#D9603F;
+  }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,'IBM Plex Sans',sans-serif; line-height:1.6; }
+  .wrap{ max-width:720px; margin:0 auto; padding:32px 20px 80px; }
+  h1{ font-size:22px; margin-bottom:4px; }
+  .updated{ color:var(--inkSoft); font-size:12px; margin-bottom:32px; }
+  h2{ font-size:16px; color:var(--accent); margin-top:32px; border-top:1px solid var(--line); padding-top:24px; }
+  p, li{ font-size:14px; color:var(--ink); }
+  ul{ padding-left:20px; }
+  .box{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin:16px 0; }
+  .warn{ border-color:var(--violation); }
+  .warn b{ color:var(--violation); }
+  a{ color:var(--accent); }
+  .back{ display:inline-block; margin-bottom:20px; font-size:13px; color:var(--inkSoft); text-decoration:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="index.html" class="back">← Retour à l'application</a>
+  <h1>Politique de confidentialité</h1>
+  <div class="updated">RSE Transport — Patoo · Dernière mise à jour : août 2026</div>
+
+  <p>Cette page explique quelles données sont collectées par l'application RSE Transport, pourquoi, et quels sont vos droits.</p>
+
+  <h2>Qui collecte vos données</h2>
+  <p>Patrice Gachard, exploitant sous l'enseigne <b>Patoo</b>, éditeur de l'application RSE Transport. Contact : <a href="mailto:rse2patoo@gmail.com">rse2patoo@gmail.com</a>.</p>
+
+  <h2>Données collectées</h2>
+  <ul>
+    <li><b>À l'inscription :</b> nom, prénom, numéro de téléphone, adresse email, mot de passe (stocké de façon chiffrée, jamais en clair).</li>
+    <li><b>Pendant l'utilisation :</b> heures de travail, de conduite, de pause et de repos, uniquement pour le calcul des seuils réglementaires (RSE, code du travail). Ces données sont associées à votre compte.</li>
+    <li><b>Position géographique :</b> uniquement lorsque vous appuyez sur le bouton "Maintenant" pour démarrer votre repos journalier, afin d'enregistrer le lieu du découché. Aucune géolocalisation en continu, aucun suivi de trajet.</li>
+    <li><b>Technique :</b> un identifiant d'appareil (généré aléatoirement, sans lien avec votre identité) sert à verrouiller votre compte sur votre téléphone.</li>
+  </ul>
+
+  <div class="box warn">
+    <p><b>⚠️ Informations obligatoires pour activer votre compte</b></p>
+    <p>Le nom, le prénom, l'adresse email et le numéro de téléphone sont <b>obligatoires</b> pour créer et activer votre compte — ils permettent notamment à Patoo de vous recontacter en cas de besoin (question réglementaire, problème technique, suivi de l'abonnement).</p>
+    <p>Si l'une de ces informations est manquante, invalide, ou volontairement erronée, <b>le compte ne pourra pas être activé ou sera résilié</b> s'il l'a déjà été. Dans ce cas, <b>les sommes déjà versées pour l'accès à l'application ne seront pas remboursées</b>.</p>
+  </div>
+
+  <h2>Pourquoi ces données sont collectées</h2>
+  <ul>
+    <li>Gérer votre accès à l'application (création de compte, connexion, sécurité).</li>
+    <li>Vous permettre de suivre vos temps de conduite, pause, repos et amplitude au regard de la réglementation RSE et du code du travail.</li>
+    <li>Vous recontacter si nécessaire (question sur votre compte, votre abonnement, ou un point réglementaire).</li>
+    <li>Gérer l'abonnement payant (12€/365 jours) et son renouvellement.</li>
+  </ul>
+
+  <h2>Qui a accès à vos données</h2>
+  <p>Vos données ne sont jamais vendues ni transmises à des tiers à des fins commerciales. Elles sont accessibles uniquement par Patoo, et hébergées via les prestataires techniques suivants, qui agissent comme sous-traitants :</p>
+  <ul>
+    <li><b>Supabase</b> — hébergement de la base de données</li>
+    <li><b>Netlify</b> — hébergement de l'application</li>
+    <li><b>Resend</b> — envoi des emails (inscription, code d'activation, notifications)</li>
+    <li><b>OpenStreetMap / Nominatim</b> — uniquement les coordonnées GPS (sans votre nom ni email) sont transmises à ce service au moment où vous démarrez votre repos, pour obtenir l'adresse du lieu</li>
+  </ul>
+
+  <h2>Durée de conservation</h2>
+  <ul>
+    <li>Votre compte est conservé tant qu'il reste actif ou jusqu'à votre demande de suppression.</li>
+    <li>L'historique détaillé de vos journées (conduite, pauses, amplitude) est conservé 366 jours sur le serveur, et 30 jours en local sur votre téléphone.</li>
+  </ul>
+
+  <h2>Vos droits</h2>
+  <p>Conformément au RGPD, vous pouvez à tout moment demander l'accès à vos données, leur rectification, ou leur suppression définitive, en écrivant à <a href="mailto:rse2patoo@gmail.com">rse2patoo@gmail.com</a>. La suppression de votre compte entraîne l'arrêt de votre accès à l'application.</p>
+
+  <h2>Sécurité</h2>
+  <p>Les mots de passe sont chiffrés (jamais stockés en clair). Les échanges entre l'application et le serveur sont chiffrés (HTTPS). L'accès aux données de gestion est protégé par mot de passe administrateur.</p>
+</div>
+</body>
+</html>

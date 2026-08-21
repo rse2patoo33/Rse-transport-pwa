@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Admin — RSE Transport Patoo</title>
+<style>
+  :root{
+    --bg:#12181A; --card:#1B2326; --ink:#F3F5F1; --inkSoft:#8FA098;
+    --line:#2C3A3D; --safe:#4F9C6E; --alerte:#E3A542; --violation:#D9603F; --accent:#E3A542;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,'IBM Plex Sans',sans-serif; }
+  .wrap{ max-width:1000px; margin:0 auto; padding:24px 16px 60px; }
+  h1{ font-size:22px; margin:0 0 4px; }
+  .sub{ color:var(--inkSoft); font-size:13px; margin-bottom:24px; }
+  #loginBox{ max-width:320px; margin:80px auto; text-align:center; }
+  #loginBox input{ width:100%; padding:12px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); font-size:15px; margin-bottom:12px; }
+  #loginBox button, .btn{ background:var(--accent); color:#1B1200; border:none; border-radius:8px; padding:10px 16px; font-weight:600; font-size:13px; cursor:pointer; }
+  .btn.secondary{ background:var(--card); color:var(--ink); border:1px solid var(--line); }
+  .btn.danger{ background:var(--violation); color:#fff; }
+  .btn.small{ padding:5px 10px; font-size:11px; margin:2px; }
+  table{ width:100%; border-collapse:collapse; font-size:13px; margin-top:16px; }
+  th{ text-align:left; color:var(--inkSoft); font-size:11px; text-transform:uppercase; padding:8px; border-bottom:1px solid var(--line); }
+  td{ padding:10px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  .badge{ display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
+  .badge.ok{ background:#4F9C6E33; color:var(--safe); }
+  .badge.warn{ background:#E3A54233; color:var(--alerte); }
+  .badge.bad{ background:#D9603F33; color:var(--violation); }
+  #driversTable{ display:none; }
+  .err{ color:var(--violation); font-size:12px; margin-top:8px; }
+  .histoBox{ margin-top:6px; font-size:11px; color:var(--inkSoft); }
+  .refreshRow{ display:flex; justify-content:space-between; align-items:center; margin-top:20px; }
+</style>
+</head>
+<body>
+
+<div id="loginBox">
+  <h1>🚚 Admin RSE Transport</h1>
+  <p class="sub">Panneau de gestion des chauffeurs</p>
+  <input type="password" id="adminSecretInput" placeholder="Mot de passe admin" />
+  <button id="loginBtn" class="btn" style="width:100%;">Se connecter</button>
+  <div id="loginErr" class="err"></div>
+</div>
+
+<div class="wrap" id="mainPanel" style="display:none;">
+  <h1>🚚 Gestion des chauffeurs</h1>
+  <div class="sub">RSE Transport — Patoo</div>
+
+  <div class="refreshRow">
+    <button id="refreshBtn" class="btn secondary">↻ Actualiser</button>
+    <span id="countLabel" class="sub" style="margin:0;"></span>
+  </div>
+
+  <table id="driversTable">
+    <thead>
+      <tr>
+        <th>Chauffeur</th>
+        <th>Contact</th>
+        <th>Statut</th>
+        <th>Appareil</th>
+        <th>Accès expire</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="driversBody"></tbody>
+  </table>
+</div>
+
+<script>
+(function(){
+  var adminSecret = null;
+
+  function call(fn, body){
+    return fetch('/.netlify/functions/'+fn, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+    }).then(function(r){ return r.json(); });
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', function(){
+    var val = document.getElementById('adminSecretInput').value.trim();
+    if(!val){ return; }
+    adminSecret = val;
+    loadDrivers();
+  });
+
+  function statusBadge(d){
+    if(d.revoked) return '<span class="badge bad">Révoqué</span>';
+    if(!d.approved) return '<span class="badge warn">En attente</span>';
+    if(d.access_expires_at && new Date(d.access_expires_at) < new Date()) return '<span class="badge bad">Expiré</span>';
+    if(!d.used) return '<span class="badge warn">Approuvé, pas activé</span>';
+    return '<span class="badge ok">Actif</span>';
+  }
+
+  function fmtDate(iso){
+    if(!iso) return '—';
+    var d = new Date(iso);
+    return d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  }
+
+  function loadDrivers(){
+    document.getElementById('loginErr').textContent = '';
+    call('list-drivers', { adminSecret: adminSecret }).then(function(data){
+      if(data.error){
+        document.getElementById('loginErr').textContent = data.error === 'non autorisé' ? 'Mot de passe incorrect.' : data.error;
+        return;
+      }
+      document.getElementById('loginBox').style.display = 'none';
+      document.getElementById('mainPanel').style.display = 'block';
+      document.getElementById('driversTable').style.display = 'table';
+      renderDrivers(data.drivers || []);
+    }).catch(function(){
+      document.getElementById('loginErr').textContent = 'Connexion au serveur impossible.';
+    });
+  }
+
+  function renderDrivers(drivers){
+    document.getElementById('countLabel').textContent = drivers.length + ' chauffeur(s)';
+    var body = document.getElementById('driversBody');
+    body.innerHTML = '';
+    drivers.forEach(function(d){
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td><b>'+(d.last_name||'')+' '+(d.first_name||'')+'</b></td>' +
+        '<td>'+d.email+'<br><span class="sub" style="font-size:11px;">'+(d.phone||'—')+'</span></td>' +
+        '<td>'+statusBadge(d)+'</td>' +
+        '<td style="font-size:11px;">'+(d.device_id ? 'Verrouillé' : '—')+'</td>' +
+        '<td style="font-size:11px;">'+fmtDate(d.access_expires_at)+'</td>' +
+        '<td id="actions_'+btoa(d.email)+'"></td>';
+      body.appendChild(tr);
+      var actionsCell = tr.querySelector('#actions_'+btoa(d.email));
+      addActionButtons(actionsCell, d);
+    });
+  }
+
+  function addActionButtons(cell, d){
+    var actions = [
+      { label:'Renouveler', action:'renew', cls:'btn small' },
+      { label:'Nouvel appareil', action:'reset-device', cls:'btn small secondary' },
+      { label: d.revoked ? 'Réactiver' : 'Révoquer', action: d.revoked ? 'unrevoke' : 'revoke', cls: d.revoked ? 'btn small secondary' : 'btn small danger' },
+      { label:'Historique', action:'history', cls:'btn small secondary' },
+      { label:'🗑 Supprimer', action:'delete', cls:'btn small danger' }
+    ];
+    actions.forEach(function(a){
+      var btn = document.createElement('button');
+      btn.className = a.cls;
+      btn.textContent = a.label;
+      btn.addEventListener('click', function(){
+        if(a.action==='history'){ toggleHistory(cell, d.email); return; }
+        var confirmMsg = a.action==='delete'
+          ? 'SUPPRESSION DÉFINITIVE et irréversible du compte et de l\'historique de '+d.email+'. Continuer ?'
+          : 'Confirmer : "'+a.label+'" pour '+d.email+' ?';
+        if(!confirm(confirmMsg)) return;
+        call('manage-account', { adminSecret: adminSecret, email: d.email, action: a.action }).then(function(res){
+          if(res.error){ alert('Erreur : '+res.error); return; }
+          loadDrivers();
+        });
+      });
+      cell.appendChild(btn);
+    });
+  }
+
+  function toggleHistory(cell, email){
+    var existing = cell.querySelector('.histoBox');
+    if(existing){ existing.remove(); return; }
+    var box = document.createElement('div');
+    box.className = 'histoBox';
+    box.textContent = 'Chargement...';
+    cell.appendChild(box);
+    fetch('/.netlify/functions/get-driver-history?email='+encodeURIComponent(email)+'&days=366')
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(!data.ok || !data.days || !data.days.length){ box.textContent = 'Aucune donnée récente.'; return; }
+        var totalConduite = data.days.reduce(function(s,d){ return s+(d.conduite_min||0); }, 0);
+        box.innerHTML = 'Conduite ('+data.days.length+' j) : '+Math.round(totalConduite/60)+'h'+String(totalConduite%60).padStart(2,'0')+'<br>' +
+          data.days.map(function(d){ return d.date+' : conduite '+Math.round((d.conduite_min||0)/60)+'h'+String((d.conduite_min||0)%60).padStart(2,'0'); }).join('<br>');
+      });
+  }
+
+  document.getElementById('refreshBtn').addEventListener('click', loadDrivers);
+})();
+</script>
+</body>
+</html>

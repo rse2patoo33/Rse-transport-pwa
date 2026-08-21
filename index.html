@@ -1,0 +1,1961 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<title>RSE Transport</title>
+
+<!-- Rend l'app "installable" en plein écran sur téléphone (Ajouter à l'écran d'accueil) -->
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="RSE Transport" />
+<meta name="theme-color" content="#12181A" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+  :root{
+    --bg:#12181A; --card:#1B2326; --ink:#F3F5F1; --inkSoft:#8FA098;
+    --line:#2C3A3D; --na:#4A5A57; --safe:#4F9C6E; --alerte:#E3A542; --violation:#D9603F; --accent:#E3A542;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; padding:0; background:var(--bg); color:var(--ink); font-family:'IBM Plex Sans',sans-serif;
+    -webkit-user-select:none; user-select:none; overscroll-behavior:none; }
+  .disp{ font-family:'Oswald',sans-serif; }
+  .mono{ font-family:'IBM Plex Mono',monospace; }
+
+  #setup{ min-height:100vh; min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  #activation{ min-height:100vh; min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  #activation .box{ width:100%; max-width:340px; }
+  #setup .box{ width:100%; max-width:320px; }
+  .eyebrow{ display:flex; align-items:center; gap:8px; font-size:11px; letter-spacing:.18em; text-transform:uppercase; font-weight:600; color:var(--accent); margin-bottom:8px; }
+  #setup h1{ font-size:30px; margin:0 0 4px; }
+  #setup p{ font-size:14px; color:var(--inkSoft); margin:0 0 24px; line-height:1.5; }
+  label.field-label{ display:block; font-size:12px; color:var(--inkSoft); margin:10px 0 4px; }
+  label.field-label:first-of-type{ margin-top:0; }
+  .formInput{ display:block; width:100%; box-sizing:border-box; padding:12px; border-radius:8px; background:var(--card); border:1px solid var(--line); color:var(--ink); font-size:16px; font-family:'IBM Plex Mono',monospace; }
+  input[type=time]{ width:100%; margin:4px 0 20px; border-radius:10px; padding:14px; font-size:24px; text-align:center;
+    background:var(--card); border:1px solid var(--line); color:var(--ink); font-family:'IBM Plex Mono',monospace; }
+  button{ font-family:inherit; border:none; cursor:pointer; }
+  #startBtn{ width:100%; border-radius:10px; padding:15px; font-weight:600; font-size:16px; background:var(--accent); color:#1B1200; }
+  .authTab{ flex:1; padding:10px; border-radius:8px; border:1px solid var(--line); background:none; color:var(--inkSoft); font-family:'IBM Plex Sans',sans-serif; font-size:13px; font-weight:600; }
+  .authTabActive{ background:var(--accent); color:#1B1200; border-color:var(--accent); }
+  #registerBtn, #checkAccessBtn{ width:100%; border-radius:10px; padding:15px; font-weight:600; font-size:16px; background:var(--accent); color:#1B1200; }
+
+  #app{ display:none; min-height:100vh; min-height:100dvh; padding-bottom:190px; }
+  .wrap{ max-width:380px; margin:0 auto; padding:22px 16px 0; }
+  .topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+  .resetBtn{ display:flex; align-items:center; gap:5px; font-size:11px; color:var(--inkSoft); background:none; }
+  .clockRow{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:22px; }
+  .clockRow h1{ font-size:30px; margin:0; }
+  .clockRow span{ font-size:12px; color:var(--inkSoft); }
+
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:12px; display:flex; align-items:center; gap:16px; }
+  .card svg{ transform:rotate(-90deg); flex-shrink:0; }
+  .gaugeIcon{ transform:rotate(90deg); }
+  .card .body{ flex:1; min-width:0; }
+  .cardTitle{ font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--inkSoft); margin-bottom:2px; }
+  .cardBig{ font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:600; }
+  .cardSmall{ font-size:11px; color:var(--inkSoft); margin:2px 0 6px; }
+  .cardFoot{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--inkSoft); display:flex; justify-content:space-between; gap:8px; min-height:12px; }
+  .vlabel{ writing-mode:vertical-rl; text-orientation:mixed; transform:rotate(180deg); font-family:'Oswald',sans-serif;
+    font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); align-self:stretch;
+    display:flex; align-items:center; justify-content:center; padding-left:10px; margin-left:2px;
+    border-left:1px solid var(--line); flex-shrink:0; }
+  .vlabelLeft{ writing-mode:vertical-rl; text-orientation:mixed; transform:rotate(180deg); font-family:'Oswald',sans-serif;
+    font-size:15px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; align-self:stretch;
+    display:flex; align-items:center; justify-content:center; padding-right:10px; margin-right:10px;
+    border-right:1px solid; flex-shrink:0; }
+
+  .note{ font-size:11px; line-height:1.5; color:var(--inkSoft); margin:8px 0 20px; }
+  .sectionLabel{ font-size:14px; text-transform:uppercase; letter-spacing:.1em; color:var(--accent); font-family:'Oswald',sans-serif; font-weight:600; margin:24px 0 10px; padding-top:16px; border-top:2px solid var(--accent); }
+  .sectionLabel:first-child{ border-top:none; padding-top:0; margin-top:0; }
+
+  .pauseBanner{ border:1px solid; border-radius:14px; padding:16px; margin-bottom:14px; text-align:center; transition:background .4s,border-color .4s; }
+  .pauseBig{ font-family:'IBM Plex Mono',monospace; font-size:34px; font-weight:600; line-height:1; transition:color .4s; }
+  .pauseLabel{ font-size:12px; margin-top:6px; font-weight:500; transition:color .4s; }
+  .pauseSteps{ display:flex; justify-content:center; gap:6px; margin-top:10px; }
+  .pauseStep{ font-family:'IBM Plex Mono',monospace; font-size:10px; padding:3px 8px; border-radius:20px; border:1px solid var(--line); color:var(--inkSoft); }
+  .pauseStep.done{ border-color:transparent; }
+  .restBox{ border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:14px; background:var(--card); }
+  .restBox input[type=datetime-local]{ font-family:'IBM Plex Mono',monospace; font-size:13px; background:var(--bg); color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:8px; width:100%; margin:6px 0 4px; }
+  .restNowBtn{ font-family:'IBM Plex Sans',sans-serif; font-size:11px; font-weight:600; padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:none; color:var(--inkSoft); margin-bottom:10px; }
+  .restResult{ display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-top:1px solid var(--line); font-family:'IBM Plex Mono',monospace; font-size:13px; }
+  .restResult:first-of-type{ border-top:none; }
+  .pauseRow{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:9px 0; border-top:1px solid var(--line); font-family:'IBM Plex Mono',monospace; font-size:12px; }
+  .pauseRow:first-of-type{ border-top:none; }
+  .pauseRowBtns{ display:flex; gap:6px; }
+  .pauseIconBtn{ background:none; border:1px solid var(--line); border-radius:6px; padding:4px 7px; font-size:12px; color:var(--inkSoft); }
+  .pauseEditForm{ display:flex; gap:8px; align-items:center; padding:9px 0; border-top:1px solid var(--line); }
+  .pauseEditForm input{ font-family:'IBM Plex Mono',monospace; font-size:12px; background:var(--bg); color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:5px; }
+  .pauseEditForm input[type=time]{ width:82px; }
+  .pauseEditForm input[type=number]{ width:56px; }
+
+  .toggleWrap{ position:fixed; left:0; right:0; bottom:0; padding:16px 16px calc(20px + env(safe-area-inset-bottom));
+    background:linear-gradient(to top, var(--bg) 60%, transparent); }
+  #conduiteBtn, #pauseBtn{ max-width:380px; margin:0 auto; width:100%; display:flex; align-items:center; justify-content:center; gap:8px;
+    border-radius:14px; padding:14px; font-weight:600; font-size:15px; color:#101815; }
+
+  .frTable{ width:100%; border-collapse:collapse; font-size:10px; }
+  .frTable th, .frTable td{ border:1px solid var(--line); padding:4px 5px; text-align:center; white-space:nowrap; }
+  .frTable td.frCity{ text-align:left; min-width:100px; }
+  .frTable input[type=text]{ width:100%; background:none; border:none; color:var(--ink); font-size:10px; text-align:left; }
+  .frTable select{ width:100%; background:var(--bg); border:1px solid var(--line); border-radius:4px; color:var(--ink); font-size:10px; padding:2px; }
+  .frTable input[type=checkbox]{ width:14px; height:14px; }
+  .frTable th{ background:var(--card); color:var(--inkSoft); font-size:9px; text-transform:uppercase; }
+  .frWeekend td{ background:#22282b; }
+
+  @media print {
+    body{ background:#fff !important; color:#111 !important; font-size:16px; }
+    #setup, .toggleWrap, #exportPdfBtn, .restNowBtn, .pauseRowBtns, .pauseEditForm{ display:none !important; }
+    #app{ display:block !important; padding-bottom:0 !important; }
+    #feuilleRouteBlock{ display:block; }
+    body.printing-feuille .wrap > *:not(#settingsPanel){ display:none !important; }
+    body.printing-feuille .toggleWrap{ display:none !important; }
+    body.printing-feuille #settingsPanel{ display:block !important; }
+    body.printing-feuille #settingsPanel > *:not(#feuilleRouteBlock){ display:none !important; }
+    body.printing-feuille #feuilleRouteBlock{ border:none !important; background:#fff !important; padding:0 !important; }
+    body.printing-feuille .sectionLabel{ display:none !important; }
+    body.printing-feuille #frPrintHeader{ display:block !important; }
+    body.printing-feuille #frPrintHeader div{ color:#111 !important; }
+    body.printing-feuille #frMonthInput, body.printing-feuille #frNom, body.printing-feuille #frPrenom, body.printing-feuille #printFeuilleRouteBtn{ display:none !important; }
+    body.printing-feuille label{ color:#111 !important; }
+    body.printing-feuille .frTable{ border:1px solid #14213d !important; }
+    body.printing-feuille .frTable th, body.printing-feuille .frTable td{ border-color:#14213d !important; color:#111 !important; padding:5px 4px !important; }
+    body.printing-feuille .frTable thead th{ background:#2c3e6b !important; color:#fff !important; }
+    body.printing-feuille .frTable tr.frWeekend td{ background:#e2e5ea !important; }
+    body.printing-feuille #frTotals{ color:#111 !important; background:#f0f1f3 !important; border:1px solid #14213d !important; padding:8px !important; margin-top:0 !important; font-weight:600; }
+    .wrap{ max-width:100% !important; padding:0 24px !important; }
+    .card, .restBox, .pauseRow{ border:1px solid #999 !important; background:#fff !important; break-inside:avoid; padding:20px 22px !important; margin-bottom:18px !important; }
+    .cardTitle{ font-size:15px !important; }
+    .cardBig{ font-size:30px !important; }
+    .cardSmall{ font-size:15px !important; }
+    .cardFoot, .restResult, .pauseRow{ font-size:15px !important; }
+    .sectionLabel{ font-size:15px !important; margin:26px 0 12px !important; }
+    .note{ font-size:13px !important; }
+    .disp{ font-size:1.3em !important; }
+    .cardTitle, .cardBig, .cardSmall, .cardFoot, .sectionLabel, .vlabel, .note, .pauseRow, .restResult{ color:#111 !important; }
+    .card svg, .restBox svg{ transform:rotate(-90deg) scale(1.35); transform-origin:center; }
+    svg circle{ stroke:#333 !important; }
+    .clockRow h1{ font-size:2.2em !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="activation" style="display:none">
+  <div class="box">
+    <div class="eyebrow">🚚 RSE TRANSPORT</div>
+    <div style="display:flex;gap:8px;margin-bottom:18px;">
+      <button id="tabRegister" class="authTab authTabActive">Créer un compte</button>
+      <button id="tabLogin" class="authTab">Se connecter</button>
+    </div>
+
+    <div id="registerForm">
+      <h1 class="disp" style="font-size:24px;">Inscription</h1>
+      <p>Tous les champs sont obligatoires — votre nom, prénom et téléphone permettent à Patoo de vous recontacter en cas de besoin.</p>
+
+      <div style="border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:16px;background:var(--card);">
+        <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:6px;">Accès : 12 € / 365 jours</div>
+        <div style="font-size:11px;color:var(--inkSoft);line-height:1.5;">
+          À régler par virement avant l'activation :<br>
+          IBAN : <span class="mono">FR76 2823 3000 0173 7433 0498 365</span><br>
+          BIC : <span class="mono">REVOFRP2</span><br>
+          Titulaire : Patrice Gachard<br>
+          Référence à indiquer : votre nom + prénom
+        </div>
+      </div>
+
+      <label class="field-label">Nom</label>
+      <input type="text" id="regLastName" name="lastName" autocomplete="off" class="formInput" placeholder="Ex : Martin" autocapitalize="off" autocorrect="off" spellcheck="false" />
+      <label class="field-label">Prénom</label>
+      <input type="text" id="regFirstName" name="firstName" autocomplete="off" class="formInput" placeholder="Ex : Jean" autocapitalize="off" autocorrect="off" spellcheck="false" />
+      <label class="field-label">Téléphone</label>
+      <input type="tel" id="regPhone" name="phone" autocomplete="tel" class="formInput" placeholder="06 12 34 56 78" autocapitalize="off" autocorrect="off" spellcheck="false" />
+      <label class="field-label">Email</label>
+      <input type="email" id="regEmail" name="email" autocomplete="email" class="formInput" placeholder="vous@exemple.fr" autocapitalize="off" autocorrect="off" spellcheck="false" />
+      <label class="field-label">Code confidentiel (6 caractères min.)</label>
+      <input type="password" id="regPassword" name="newPassword" autocomplete="new-password" class="formInput" placeholder="••••••••" />
+      <button id="registerBtn" class="disp" style="margin-top:14px;">Créer mon compte</button>
+      <p style="font-size:10px;color:var(--inkSoft);margin-top:10px;line-height:1.4;">En vous inscrivant, vous acceptez que votre nom, prénom, téléphone et email soient conservés par Patoo pour la gestion de votre accès à l'application, conformément au RGPD. Ces 4 informations sont <b>obligatoires</b> pour activer votre compte ; si l'une d'elles est manquante ou erronée, le compte ne pourra pas être activé ou sera résilié, <b>sans remboursement des sommes versées</b>. Vous pouvez demander la suppression de vos données à tout moment auprès de Patoo. <a href="privacy.html" style="color:var(--accent);">Politique de confidentialité complète</a>.</p>
+    </div>
+
+    <div id="loginForm" style="display:none;">
+      <h1 class="disp" style="font-size:24px;">Connexion</h1>
+      <p>Vous avez déjà un compte sur cet appareil ou un autre — connectez-vous.</p>
+      <label class="field-label">Email</label>
+      <input type="email" id="licenseEmail" name="loginEmail" autocomplete="email" class="formInput" placeholder="vous@exemple.fr" autocapitalize="off" autocorrect="off" spellcheck="false" />
+      <label class="field-label">Mot de passe</label>
+      <input type="password" id="licensePassword" name="loginPassword" autocomplete="current-password" class="formInput" placeholder="••••••••" />
+      <button id="checkAccessBtn" class="disp" style="margin-top:14px;">Se connecter</button>
+    </div>
+
+    <p id="licenseMsg" style="display:none; font-size:12px; margin-top:14px; line-height:1.4;"></p>
+
+    <div id="codeForm" style="display:none;">
+      <h1 class="disp" style="font-size:24px;">Code d'activation</h1>
+      <p>Votre inscription est transmise à Patoo pour validation. Une fois approuvée, un code à 6 chiffres vous sera envoyé à <span id="codeEmailDisplay" class="mono"></span> — saisissez-le ici pour finaliser votre accès.</p>
+      <p style="font-size:11px;color:var(--inkSoft);margin-top:-10px;">Vous pouvez fermer l'app et revenir plus tard une fois le code reçu.</p>
+      <label class="field-label">Code reçu par email</label>
+      <input type="text" id="activationCode" name="activationCode" autocomplete="one-time-code" class="formInput" placeholder="123456" inputmode="numeric" maxlength="6" autocapitalize="off" autocorrect="off" spellcheck="false" style="text-align:center;font-size:24px;letter-spacing:0.2em;" />
+      <p style="font-size:11px;color:var(--inkSoft);margin-top:6px;">Code à recopier</p>
+      <button id="verifyCodeBtn" class="disp" style="margin-top:14px;">Valider le code</button>
+    </div>
+  </div>
+</div>
+
+<div id="mainApp" style="display:none">
+
+<div id="setup" style="display:none">
+  <div class="box">
+    <div class="eyebrow">🚚 RSE TRANSPORT</div>
+    <h1 class="disp">Début de service</h1>
+    <p>Indiquez votre heure d'embauche. L'amplitude et la cascade des pauses (code du travail + RSE) se calculent automatiquement.</p>
+    <label class="field-label">Heure d'embauche</label>
+    <input type="time" id="embaucheInput" class="mono" />
+    <button id="startBtn" class="disp">Démarrer le service</button>
+    <p id="expiredMsg" style="display:none; font-size:12px; color:var(--violation); margin-top:14px; line-height:1.4;">
+      ⚠️ La journée précédente a dépassé 24h sans redémarrage — elle a été clôturée et fermée automatiquement.
+    </p>
+  </div>
+</div>
+
+<div id="app">
+  <div class="wrap">
+    <div class="topbar">
+      <div class="eyebrow">🚚 RSE TRANSPORT</div>
+      <div style="display:flex;gap:10px;">
+        <button class="resetBtn" id="settingsBtn">⚙️ Réglages</button>
+        <button class="resetBtn" id="resetBtn">↺ Nouvelle journée</button>
+      </div>
+    </div>
+    <div class="clockRow">
+      <h1 class="disp" id="nowClock">--:--</h1>
+      <span class="mono" id="embaucheClock"></span>
+    </div>
+
+    <div id="settingsPanel" style="display:none;">
+      <div class="sectionLabel" style="border-top:none;margin-top:0">Réglages</div>
+
+      <div id="autoDetectRow" class="restBox" style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:11px;color:var(--inkSoft);flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="autoDetectToggle" style="width:16px;height:16px;" />
+          🛰️ Conduite auto. (GPS) — démarre et s'arrête seule sur "autre travail"
+        </label>
+      </div>
+
+      <div id="embaucheEdit"></div>
+      <div id="currentModeEdit"></div>
+      <div id="pauseEdit"></div>
+      <div id="addPauseEdit"></div>
+      <div id="totalsEdit"></div>
+      <div id="weeklyRestCalc"></div>
+      <div id="decouchesHisto"></div>
+      <button id="exportPdfBtn" class="restNowBtn" style="width:100%;padding:12px;margin:6px 0 20px;font-size:13px;">🖨️ Exporter la journée en PDF</button>
+
+      <div id="feuilleRouteBlock" class="restBox">
+        <div class="sectionLabel" style="border-top:none;">Feuille de route (mensuelle)</div>
+        <div id="frPrintHeader" style="display:none;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
+            <div>
+              <div style="font-size:16px;font-weight:700;">FEUILLE DE ROUTE PL/SPL</div>
+              <div id="frPrintMonth" style="font-size:14px;font-weight:700;"></div>
+            </div>
+            <div style="text-align:right;font-size:11px;">
+              <div>Nom : <span id="frPrintNom"></span></div>
+              <div>Prénom : <span id="frPrintPrenom"></span></div>
+            </div>
+          </div>
+          <div id="frPrintSignature" style="font-size:11px;margin-bottom:14px;"></div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+          <input type="month" id="frMonthInput" class="formInput" style="width:auto;" />
+          <input type="text" id="frNom" class="formInput" placeholder="Nom" style="width:120px;" />
+          <input type="text" id="frPrenom" class="formInput" placeholder="Prénom" style="width:120px;" />
+          <button id="printFeuilleRouteBtn" class="restNowBtn" style="padding:8px 14px;font-size:12px;">🖨️ Imprimer / PDF</button>
+        </div>
+        <div id="frTableWrap" style="overflow-x:auto;"></div>
+        <div id="frTotals" style="margin-top:10px;font-size:12px;color:var(--inkSoft);"></div>
+        <label style="display:flex;align-items:flex-start;gap:8px;margin:14px 0 20px;font-size:12px;color:var(--inkSoft);">
+          <input type="checkbox" id="frAttestation" style="margin-top:2px;" />
+          J'atteste sur l'honneur que mon permis de conduire est en cours de validité.
+        </label>
+      </div>
+
+      <div class="sectionLabel">À propos des règles appliquées</div>
+      <p class="note">Deux systèmes indépendants, non liés l'un à l'autre : <strong>Code du travail (convention)</strong> — cumul total des pauses créditées (paliers de 15 min), y compris les pauses prises pour la RSE : 15 min cumulées exigées à 3h de travail, 30 min à 6h, 45 min cumulées à 9h — une pause RSE de 45 min avant 4h30 couvre donc automatiquement les trois. <strong>RSE (règlement CE 561/2006)</strong> — pauses par bloc dédié à la conduite : ① 45 min minimum (jusqu'à 1h recommandé DREAL) avant 4h30, puis ③ une seconde pause de 45 min avant 9h de conduite pour être autorisé à prolonger jusqu'à la 10e heure, limité à 2 fois par semaine. Fractionnement : la pause RSE ① (avant 4h30) peut être un bloc unique de 45 min ou 15 + 30 min ; la pause RSE ③ (avant 9h) doit être un bloc unique de 45 min, non fractionnable ; pour le code du travail, chaque bloc de pause n'est crédité que par palier de 15 min et n'importe quelle combinaison compte pour le cumul (3×15, 15+15, 30 seul...) — toute minute au-delà d'un palier atteint n'est pas comptabilisée. En revanche, pour les 3h avant 15h d'amplitude, toutes les pauses de la journée sont additionnées intégralement (même 5 min aux toilettes), sans aucun plafond. Temps de service : limité à 12h si l'embauche a lieu après 5h du matin, ou à 10h si l'embauche a lieu avant 5h, calculé hors pauses. Amplitude : plafonnée à 13h par défaut, systématiquement à 13h si l'embauche a lieu avant 5h, et réduite à 12h dès qu'une coupure de 3h a été prise sans que le repos fractionné soit terminé (le total 3h+9h=12h ne rentre plus dans les 24h au-delà) ; passé le plafond applicable (même d'une minute), il bascule automatiquement à 15h pour éviter une fausse alerte, en ajoutant la date du jour à un historique visible sous la carte Amplitude (max 3 dates par semaine) — si 3 dates différentes sont déjà utilisées cette semaine, l'alerte reste affichée. Repos journalier : un repos réduit de 9h d'un seul trait, un repos fractionné (3h puis 9h, 12h au total), ou un repos normal continu de 11h, valident tous le repos journalier — seul le réduit ouvre le droit à l'amplitude de 15h (max 3 fois par semaine) ; le fractionné, bien que validant le repos, reste catégorisé comme repos normal et garde l'amplitude à 13h. Une sonnerie marque chaque palier de pause franchi (15/30/45 min, ainsi que 1h — repère DREAL) — active uniquement lorsque l'application est ouverte à l'écran. L'écran reste allumé tant que l'application est ouverte au premier plan, et la journée en cours est conservée automatiquement si l'écran se met en veille ou si l'application est fermée puis rouverte. Passé 24h depuis l'heure d'embauche sans nouvelle journée démarrée, l'application se clôture et se ferme automatiquement. La conduite n'est comptabilisée pour les cartes ①③ que lorsque le bouton "Conduite" est actionné ; le reste du temps de service (bouton non actionné) compte comme travail pour le code du travail et le temps de service, mais pas pour les seuils RSE liés à la conduite. Conduite hebdomadaire (56h) et sur deux semaines (90h) : suivi basé sur le temps réellement passé en mode "Conduite" chaque jour (bouton, dont GPS), avec un historique glissant sur 3 semaines ; le chronotachygraphe reste la référence légale en cas d'écart. Outil indicatif, sans valeur probante.</p>
+    </div>
+
+    <div id="decoucheToast" style="display:none;background:var(--card);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--accent);"></div>
+    <div id="pauseBanner"></div>
+    <div id="cards"></div>
+
+  </div>
+
+  <div class="toggleWrap">
+    <div id="modeIndicator" style="text-align:center;font-size:11px;color:var(--inkSoft);margin-bottom:8px;"></div>
+    <button id="conduiteBtn" style="margin-bottom:8px;"></button>
+    <button id="pauseBtn"></button>
+  </div>
+</div>
+
+</div>
+
+<script>
+  // ---- Activation (email + mot de passe, verrouillé au premier appareil) ----
+  (function(){
+    var DEVICE_KEY = 'rse_patoo_device_id';
+    var ACCESS_KEY = 'rse_patoo_access';
+
+    function getDeviceId(){
+      var id = localStorage.getItem(DEVICE_KEY);
+      if(!id){
+        id = (crypto.randomUUID ? crypto.randomUUID() : 'dev-'+Date.now()+'-'+Math.random().toString(16).slice(2));
+        localStorage.setItem(DEVICE_KEY, id);
+      }
+      return id;
+    }
+
+    function revealApp(){
+      document.getElementById('activation').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'block';
+    }
+
+    function showActivationScreen(){
+      document.getElementById('mainApp').style.display = 'none';
+      document.getElementById('activation').style.display = 'flex';
+    }
+
+    var cached = null;
+    try{ cached = JSON.parse(localStorage.getItem(ACCESS_KEY) || 'null'); }catch(e){}
+
+    if(cached && cached.valid && cached.deviceId === getDeviceId()){
+      revealApp();
+    } else {
+      showActivationScreen();
+    }
+
+    var msgEl = document.getElementById('licenseMsg');
+    function showMsg(text, isError){
+      msgEl.style.display = 'block';
+      msgEl.style.color = isError ? 'var(--violation)' : 'var(--safe)';
+      msgEl.textContent = text;
+    }
+
+    // ---- Bascule entre les onglets Inscription / Connexion ----
+    var tabRegister = document.getElementById('tabRegister');
+    var tabLogin = document.getElementById('tabLogin');
+    var registerForm = document.getElementById('registerForm');
+    var loginForm = document.getElementById('loginForm');
+
+    tabRegister.addEventListener('click', function(){
+      tabRegister.classList.add('authTabActive');
+      tabLogin.classList.remove('authTabActive');
+      registerForm.style.display = 'block';
+      loginForm.style.display = 'none';
+      msgEl.style.display = 'none';
+    });
+    tabLogin.addEventListener('click', function(){
+      tabLogin.classList.add('authTabActive');
+      tabRegister.classList.remove('authTabActive');
+      loginForm.style.display = 'block';
+      registerForm.style.display = 'none';
+      msgEl.style.display = 'none';
+    });
+
+    // ---- Inscription ----
+    document.getElementById('registerBtn').addEventListener('click', function(){
+      var lastName = document.getElementById('regLastName').value.trim();
+      var firstName = document.getElementById('regFirstName').value.trim();
+      var phone = document.getElementById('regPhone').value.trim();
+      var email = document.getElementById('regEmail').value.trim();
+      var password = document.getElementById('regPassword').value;
+
+      if(!lastName || !firstName || !phone || !email || !password){
+        showMsg('Merci de remplir tous les champs.', true);
+        return;
+      }
+      if(password.length < 6){
+        showMsg('Le mot de passe doit faire au moins 6 caractères.', true);
+        return;
+      }
+
+      showMsg('Création du compte…', false);
+      fetch('/.netlify/functions/register-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: firstName, lastName: lastName, phone: phone,
+          email: email, password: password, deviceId: getDeviceId()
+        })
+      })
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          if(data.valid){
+            msgEl.style.display = 'none';
+            registerForm.style.display = 'none';
+            loginForm.style.display = 'none';
+            tabRegister.style.display = 'none';
+            tabLogin.style.display = 'none';
+            document.getElementById('codeEmailDisplay').textContent = email;
+            document.getElementById('codeForm').style.display = 'block';
+            document.getElementById('codeForm').dataset.email = email;
+          } else {
+            showMsg(data.error || 'Inscription refusée.', true);
+          }
+        })
+        .catch(function(){
+          showMsg('Connexion impossible. Vérifiez votre connexion internet et réessayez.', true);
+        });
+    });
+
+    // ---- Validation du code d'activation reçu par email ----
+    document.getElementById('verifyCodeBtn').addEventListener('click', function(){
+      var email = document.getElementById('codeForm').dataset.email;
+      var code = document.getElementById('activationCode').value.trim();
+      if(!code){ showMsg('Entrez le code reçu par email.', true); return; }
+
+      showMsg('Vérification du code…', false);
+      fetch('/.netlify/functions/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, code: code, deviceId: getDeviceId() })
+      })
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          if(data.valid){
+            localStorage.setItem(ACCESS_KEY, JSON.stringify({ email: email, deviceId: getDeviceId(), valid: true }));
+            revealApp();
+          } else {
+            showMsg(data.error || 'Code incorrect.', true);
+          }
+        })
+        .catch(function(){
+          showMsg('Connexion impossible. Vérifiez votre connexion internet et réessayez.', true);
+        });
+    });
+
+    // ---- Connexion (compte déjà créé) ----
+    document.getElementById('checkAccessBtn').addEventListener('click', function(){
+      var email = document.getElementById('licenseEmail').value.trim();
+      var password = document.getElementById('licensePassword').value;
+      if(!email || !password){ showMsg('Email et mot de passe requis.', true); return; }
+
+      showMsg('Vérification en cours…', false);
+      fetch('/.netlify/functions/activate-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, password: password, deviceId: getDeviceId() })
+      })
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          if(data.valid){
+            localStorage.setItem(ACCESS_KEY, JSON.stringify({ email: email, deviceId: getDeviceId(), valid: true }));
+            revealApp();
+          } else {
+            showMsg(data.error || 'Accès refusé.', true);
+          }
+        })
+        .catch(function(){
+          showMsg('Connexion impossible. Vérifiez votre connexion internet et réessayez.', true);
+        });
+    });
+  })();
+</script>
+
+<script>
+(function(){
+  var C = { na:'#4A5A57', safe:'#4F9C6E', alerte:'#E3A542', violation:'#D9603F' };
+  var RULES = {
+    amplitudeAlerte: 780, amplitudeAbsolue: 900,
+    seuil4h30: 270, seuil3h: 180, seuil6h: 360, seuil9h: 540,
+    requis30: 30, requis45: 45,
+    seuilAmpl3h: 900, requis3h: 180,
+    reposFrac3h: 180, reposFrac9h: 540
+  };
+
+  var state = null; // {embaucheStart, mode('conduite'|'travail'|'pause'), lastToggle, accConduiteMs, accTravailMs, accPauseMs, pauseSessions:[], autoExtended15h}
+
+  // ---- Persistance : l'état de la journée survit à une mise en veille / fermeture de l'app ----
+  var STORAGE_KEY = 'rse_patoo_jour_v2';
+  function saveState(){
+    if(!state) return;
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        embaucheStart: state.embaucheStart.toISOString(),
+        mode: state.mode,
+        lastToggle: state.lastToggle.toISOString(),
+        accConduiteMs: state.accConduiteMs,
+        accTravailMs: state.accTravailMs,
+        accPauseMs: state.accPauseMs,
+        pauseSessions: state.pauseSessions,
+        pauseNotified: state.pauseNotified,
+        autoExtended15h: !!state.autoExtended15h,
+        restTarget: state.restTarget || null
+      }));
+    }catch(e){}
+  }
+  function loadState(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return null;
+      var d = JSON.parse(raw);
+      return {
+        embaucheStart: new Date(d.embaucheStart),
+        mode: d.mode || 'travail',
+        lastToggle: new Date(d.lastToggle),
+        accConduiteMs: d.accConduiteMs || 0,
+        accTravailMs: d.accTravailMs || 0,
+        accPauseMs: d.accPauseMs || 0,
+        pauseSessions: d.pauseSessions || [],
+        pauseNotified: d.pauseNotified || {},
+        autoExtended15h: !!d.autoExtended15h,
+        restTarget: d.restTarget || null
+      };
+    }catch(e){ return null; }
+  }
+  function clearState(){ try{ localStorage.removeItem(STORAGE_KEY); }catch(e){} }
+
+  // ---- Historique hebdomadaire des repos réduits/fractionnés (3 max entre 2 repos hebdo) ----
+  // Stocke la liste des dates d'utilisation (pas juste un compteur) pour rester vérifiable.
+  var WEEK_KEY = 'rse_patoo_semaine_reduits_v2';
+  function isoWeekKey(d){
+    var dt = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    var day = dt.getUTCDay() || 7;
+    dt.setUTCDate(dt.getUTCDate() + 4 - day);
+    var yearStart = new Date(Date.UTC(dt.getUTCFullYear(),0,1));
+    var weekNo = Math.ceil((((dt - yearStart) / 86400000) + 1) / 7);
+    return dt.getUTCFullYear() + '-S' + String(weekNo).padStart(2,'0');
+  }
+  function getWeeklyReduits(){
+    var wk = isoWeekKey(new Date());
+    try{
+      var raw = localStorage.getItem(WEEK_KEY);
+      var d = raw ? JSON.parse(raw) : null;
+      if(!d || d.week !== wk) return { week: wk, dates: [] };
+      return { week: wk, dates: d.dates || [] };
+    }catch(e){ return { week: wk, dates: [] }; }
+  }
+  function addWeeklyReduit(dateStr){
+    var wk = getWeeklyReduits();
+    if(wk.dates.indexOf(dateStr) === -1) wk.dates.push(dateStr);
+    try{ localStorage.setItem(WEEK_KEY, JSON.stringify({ week: wk.week, dates: wk.dates })); }catch(e){}
+    return wk.dates;
+  }
+
+  // ---- Journal des périodes de 24h de la semaine (max 6, avant repos hebdomadaire obligatoire) ----
+  var WEEK_LOG_KEY = 'rse_patoo_semaine_log_v1';
+  function getWeekLog(){
+    var wk = isoWeekKey(new Date());
+    try{
+      var raw = localStorage.getItem(WEEK_LOG_KEY);
+      var d = raw ? JSON.parse(raw) : null;
+      if(!d || d.week !== wk) return { week: wk, days: [] };
+      return { week: wk, days: d.days || [] };
+    }catch(e){ return { week: wk, days: [] }; }
+  }
+  function upsertWeekLog(entry){
+    var log = getWeekLog();
+    var idx = -1;
+    for(var i=0;i<log.days.length;i++){ if(log.days[i].date===entry.date){ idx=i; break; } }
+    if(idx===-1) log.days.push(entry); else log.days[idx] = entry;
+    log.days.sort(function(a,b){ return a.date.localeCompare(b.date); });
+    try{ localStorage.setItem(WEEK_LOG_KEY, JSON.stringify({ week: log.week, days: log.days })); }catch(e){}
+    return log.days;
+  }
+
+  // ---- Historique de conduite (persistant, non réinitialisé chaque semaine) ----
+  // Sert au suivi conduite hebdomadaire (56h) et bihebdomadaire (90h/2 semaines).
+  // Basé sur le temps réellement passé en mode "Conduite" (bouton, GPS ou manuel).
+  var CONDUITE_HISTO_KEY = 'rse_patoo_conduite_histo_v1';
+  function getConduiteHisto(){
+    try{
+      var raw = localStorage.getItem(CONDUITE_HISTO_KEY);
+      return raw ? JSON.parse(raw) : [];
+    }catch(e){ return []; }
+  }
+  function upsertConduiteHisto(dateStr, conduiteMinValue){
+    var histo = getConduiteHisto();
+    var idx = -1;
+    for(var i=0;i<histo.length;i++){ if(histo[i].date===dateStr){ idx=i; break; } }
+    if(idx===-1) histo.push({date:dateStr, conduiteMin:conduiteMinValue});
+    else histo[idx].conduiteMin = conduiteMinValue;
+    // Garde 30 jours de marge, suffisant pour le calcul sur 2 semaines glissantes.
+    var cutoff = new Date(); cutoff.setDate(cutoff.getDate()-30);
+    var cutoffStr = cutoff.toISOString().slice(0,10);
+    histo = histo.filter(function(h){ return h.date>=cutoffStr; });
+    histo.sort(function(a,b){ return a.date.localeCompare(b.date); });
+    try{ localStorage.setItem(CONDUITE_HISTO_KEY, JSON.stringify(histo)); }catch(e){}
+    return histo;
+  }
+  // Lundi 00:00 de la semaine calendaire contenant la date donnée.
+  function mondayOf(d){
+    var day = d.getDay() || 7; // dimanche -> 7
+    var m = new Date(d);
+    m.setHours(0,0,0,0);
+    m.setDate(m.getDate() - (day-1));
+    return m;
+  }
+  function dstr(d){ return d.toISOString().slice(0,10); }
+
+
+  // ---- Empêche la mise en veille de l'écran tant que l'app est ouverte ----
+  var wakeLock = null;
+  async function requestWakeLock(){
+    try{
+      if('wakeLock' in navigator){
+        wakeLock = await navigator.wakeLock.request('screen');
+      }
+    }catch(e){ /* refusé (ex. batterie faible) ou non supporté : on ignore silencieusement */ }
+  }
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState === 'visible' && state){
+      requestWakeLock();
+    }
+  });
+
+  function fmt(min){
+    var neg = min < 0, m = Math.abs(Math.round(min));
+    return (neg?'-':'') + Math.floor(m/60) + ' h ' + String(m%60).padStart(2,'0');
+  }
+  // Pour les durées ponctuelles : reste en "X min" sous 60 minutes, bascule en "X h YY" au-delà.
+  function fmtMin(min){
+    var m = Math.round(min);
+    return m >= 60 ? fmt(m) : m + ' min';
+  }
+  function fmtClock(d){ return d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}); }
+
+  // ---- Notification sonore (sonnerie) à chaque palier de pause ----
+  function beep(freq){
+    try{
+      var ctx = new (window.AudioContext||window.webkitAudioContext)();
+      var o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = 'sine'; o.frequency.value = freq || 880;
+      g.gain.setValueAtTime(0.0001, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.45);
+      o.start(); o.stop(ctx.currentTime + 0.46);
+    }catch(e){}
+  }
+  // Sonnerie : petite séquence de notes (façon carillon), plus reconnaissable qu'un simple bip.
+  function playRingtone(baseFreq){
+    try{
+      var ctx = new (window.AudioContext||window.webkitAudioContext)();
+      var pattern = [baseFreq, baseFreq*1.26, baseFreq*1.5, baseFreq*1.26, baseFreq*1.5, baseFreq*1.5];
+      pattern.forEach(function(freq, i){
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type = 'triangle'; o.frequency.value = freq;
+        var start = ctx.currentTime + i*0.16;
+        g.gain.setValueAtTime(0.0001, start);
+        g.gain.exponentialRampToValueAtTime(0.32, start + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, start + 0.14);
+        o.start(start); o.stop(start + 0.15);
+      });
+    }catch(e){}
+  }
+  function notifyPalier(threshold){
+    playRingtone(threshold>=60 ? 1318 : threshold>=45 ? 1046 : 784);
+    if(window.Notification && Notification.permission === 'granted'){
+      try{
+        var title = threshold>=60 ? 'Pause 1h atteinte ✓ (DREAL)' : threshold>=45 ? 'Pause complète — 45 min ✓' : 'Palier '+threshold+' min validé ✓';
+        var body = threshold>=60 ? 'Recommandation DREAL respectée.' : threshold>=45 ? 'Minimum légal RSE atteint — vous pouvez reprendre le travail.' : 'Palier de pause atteint.';
+        new Notification(title, { body: body });
+      }catch(e){}
+    }
+  }
+
+  // Formate une durée en MM:SS, ou H:MM:SS si elle atteint 1h.
+  function fmtHMS(min){
+    var totalSec = Math.max(0, Math.round(min*60));
+    var h = Math.floor(totalSec/3600);
+    var m = Math.floor((totalSec%3600)/60);
+    var s = totalSec%60;
+    return h>0 ? (h+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')) : (String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'));
+  }
+
+  function pauseBannerHTML(currentPauseMin, target){
+    var alreadyCredited = 45 - target; // 0 sauf si un 15 ou 30 était déjà acquis plus tôt
+    var effectiveTotal = alreadyCredited + currentPauseMin;
+    var color = currentPauseMin>=15 ? C.safe : C.alerte;
+    var label;
+    if(target < 45 && currentPauseMin < target) label = 'En cours — '+alreadyCredited+' min déjà crédités, vers '+target+' min ('+(45)+' min au total)';
+    else if(currentPauseMin>=60) label = 'Pause 1h atteinte ✓ — recommandation DREAL';
+    else if(currentPauseMin>=target) label = target+' min atteints ✓ — pause RSE validée';
+    else if(currentPauseMin>=30) label = 'Palier 30 min validé ✓ — vers 45 min';
+    else if(currentPauseMin>=15) label = 'Palier 15 min validé ✓ — vers 30 min';
+    else label = 'En cours — palier 15 min à venir';
+    var remaining = target - currentPauseMin;
+    var timeStr = remaining > 0 ? fmtHMS(remaining) : fmtHMS(effectiveTotal);
+    var steps = [15,30,45,60].map(function(t){
+      var done = effectiveTotal>=t;
+      var stepLabel = t===60 ? '1h (DREAL)' : t+' min';
+      return '<span class="pauseStep'+(done?' done':'')+'" style="'+(done?('background:'+color+'26;color:'+color):'')+'">'+stepLabel+'</span>';
+    }).join('');
+    return '<div class="pauseBanner" style="border-color:'+color+'55; background:'+color+'12;">' +
+      '<div style="display:flex;align-items:stretch;">' +
+        '<div class="vlabelLeft" style="color:'+color+';border-color:'+color+'55">Pause</div>' +
+        '<div style="flex:1;text-align:center;">' +
+          '<div class="pauseBig" style="color:'+color+'">'+timeStr+'</div>' +
+          '<div class="pauseLabel" style="color:'+color+'">☕ '+label+'</div>' +
+          '<div class="pauseSteps">'+steps+'</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function restBannerHTML(segMin, targetMin){
+    var color = C.safe;
+    var targetLabel = targetMin===2700 ? '45h' : targetMin===1440 ? '24h' : targetMin===660 ? '11h' : '9h';
+    var isWeekly = targetMin>=1440;
+    var icon = isWeekly ? '🛌' : '🌙';
+    var kind = isWeekly ? 'Repos hebdomadaire' : 'Repos';
+    var remaining = targetMin - segMin;
+    var timeStr = remaining > 0 ? fmtHMS(remaining) : fmtHMS(segMin);
+    var label = remaining > 0 ? (kind+' en cours — vers '+targetLabel) : (kind+' '+targetLabel+' validé ✓');
+    var steps = '<span class="pauseStep'+(segMin>=targetMin?' done':'')+'" style="'+(segMin>=targetMin?('background:'+color+'26;color:'+color):'')+'">'+targetLabel+' de repos</span>';
+    return '<div class="pauseBanner" style="border-color:'+color+'55; background:'+color+'12;">' +
+      '<div style="display:flex;align-items:stretch;">' +
+        '<div class="vlabelLeft" style="color:'+color+';border-color:'+color+'55">'+(isWeekly?'Hebdo':'Repos')+'</div>' +
+        '<div style="flex:1;text-align:center;">' +
+          '<div class="pauseBig" style="color:'+color+'">'+timeStr+'</div>' +
+          '<div class="pauseLabel" style="color:'+color+'">'+icon+' '+label+'</div>' +
+          '<div class="pauseSteps">'+steps+'</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function conduiteBannerHTML(segMin, conduiteMin){
+    var color = conduiteMin>=RULES.seuil9h ? C.violation : conduiteMin>=RULES.seuil4h30 ? C.alerte : C.safe;
+    var label;
+    if(conduiteMin>=RULES.seuil9h) label = '9h de conduite atteintes — pause requise avant la 10e h';
+    else if(conduiteMin>=RULES.seuil4h30) label = '4h30 dépassées — vers 9h';
+    else label = 'En cours — vers 4h30';
+    var remaining = RULES.seuil4h30 - conduiteMin;
+    var timeStr = remaining > 0 ? fmtHMS(remaining) : fmtHMS(conduiteMin);
+    var steps = [
+      { t: RULES.seuil4h30, lbl:'4h30 conduite max' }
+    ].map(function(s){
+      var done = conduiteMin>=s.t;
+      return '<span class="pauseStep'+(done?' done':'')+'" style="'+(done?('background:'+color+'26;color:'+color):'')+'">'+s.lbl+'</span>';
+    }).join('');
+    return '<div class="pauseBanner" style="border-color:'+color+'55; background:'+color+'12;">' +
+      '<div style="display:flex;align-items:stretch;">' +
+        '<div class="vlabelLeft" style="color:'+color+';border-color:'+color+'55">Conduite</div>' +
+        '<div style="flex:1;text-align:center;">' +
+          '<div class="pauseBig" style="color:'+color+'">'+timeStr+'</div>' +
+          '<div class="pauseLabel" style="color:'+color+'">🚚 '+label+' ('+fmt(conduiteMin)+' cumulées)</div>' +
+          '<div class="pauseSteps">'+steps+'</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function gaugeSVG(percent, color, iconEmoji){
+    var size=104, stroke=9, r=(size-stroke)/2, c=2*Math.PI*r;
+    var clamped = Math.max(0, Math.min(1, percent||0));
+    var offset = c*(1-clamped);
+    return '<svg width="'+size+'" height="'+size+'">' +
+      '<circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" stroke="#2C3A3D" stroke-width="'+stroke+'" fill="none"/>' +
+      '<circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" stroke="'+color+'" stroke-width="'+stroke+'" fill="none" ' +
+        'stroke-dasharray="'+c+'" stroke-dashoffset="'+offset+'" stroke-linecap="round" ' +
+        'style="transition:stroke-dashoffset .4s linear, stroke .4s"/>' +
+      '<foreignObject x="0" y="0" width="'+size+'" height="'+size+'">' +
+        '<div xmlns="http://www.w3.org/1999/xhtml" class="gaugeIcon" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px;">'+iconEmoji+'</div>' +
+      '</foreignObject></svg>';
+  }
+
+  function cardHTML(title, color, percent, icon, big, small, footLeft, footRight){
+    return '<div class="card">' + gaugeSVG(percent, color, icon) +
+      '<div class="body">' +
+        '<div class="cardTitle">'+title+'</div>' +
+        '<div class="cardBig" style="color:'+color+'">'+big+'</div>' +
+        '<div class="cardSmall">'+small+'</div>' +
+        ((footLeft||footRight) ? '<div class="cardFoot"><span>'+(footLeft||'')+'</span><span>'+(footRight||'')+'</span></div>' : '') +
+      '</div>' +
+      '<div class="vlabel">RSE de Patoo</div>' +
+      '</div>';
+  }
+
+  function computeAndRender(){
+    if(!state) return;
+    var now = new Date();
+    var amplitudeMin = (now - state.embaucheStart) / 60000;
+
+    // Fermeture automatique : 24h écoulées depuis l'embauche sans nouvelle journée démarrée
+    if(amplitudeMin >= 1440){
+      clearState();
+      if(wakeLock){ try{ wakeLock.release(); }catch(e){} wakeLock = null; }
+      state = null;
+      document.getElementById('app').style.display = 'none';
+      document.getElementById('setup').style.display = 'flex';
+      document.getElementById('expiredMsg').style.display = 'block';
+      try{ window.close(); }catch(e){}
+      return;
+    }
+
+    var segMin = (now - state.lastToggle) / 60000;
+    var conduiteMin = state.accConduiteMs/60000 + (state.mode==='conduite' ? segMin : 0);
+    var travailMin = state.accTravailMs/60000 + (state.mode==='travail' ? segMin : 0);
+    var workTotalMin = conduiteMin + travailMin;
+    var pauseTotalMin = state.accPauseMs/60000 + (state.mode==='pause' ? segMin : 0);
+
+    var allSessions = state.pauseSessions.slice();
+    if(state.mode==='pause') allSessions.push({startWorkMin: workTotalMin - segMin, durationMin: segMin});
+
+    // Une pause n'est reconnue que par palier 15 / 30 / 45 min : les minutes
+    // excédentaires au-delà du palier atteint ne comptent pas.
+    function credited(durationMin){
+      if(durationMin>=45) return 45;
+      if(durationMin>=30) return 30;
+      if(durationMin>=15) return 15;
+      return 0;
+    }
+
+    // Cherche une pause RSE valable après l'indice donné : soit un bloc unique
+    // de 45 min, soit une combinaison exacte 15 + 30 min (dans n'importe quel ordre).
+    // Utilisé pour la pause ① avant 4h30, qui est fractionnable.
+    function findRSEBreak(sessions, afterIdx){
+      var pending15 = -1, pending30 = -1;
+      for(var i=afterIdx+1;i<sessions.length;i++){
+        var cr = credited(sessions[i].durationMin);
+        if(cr===45) return { satisfied:true, endIdx:i, label: cr+' min ✓' };
+        if(cr===30){
+          if(pending15!==-1) return { satisfied:true, endIdx:i, label:'15+30 min ✓' };
+          pending30 = i;
+        } else if(cr===15){
+          if(pending30!==-1) return { satisfied:true, endIdx:i, label:'15+30 min ✓' };
+          pending15 = i;
+        }
+      }
+      var pending = pending15!==-1 ? '15' : pending30!==-1 ? '30' : null;
+      return { satisfied:false, endIdx:-1, label:'', pending:pending };
+    }
+
+    // Cherche un bloc unique de 45 min (non fractionnable) après l'indice donné.
+    // Utilisé pour la pause ③ avant 9h, qui doit être prise d'un seul trait.
+    function findRSESingle45(sessions, afterIdx){
+      for(var i=afterIdx+1;i<sessions.length;i++){
+        if(credited(sessions[i].durationMin)===45) return { satisfied:true, endIdx:i, label:'45 min ✓' };
+      }
+      return { satisfied:false, endIdx:-1, label:'' };
+    }
+
+    // Code du travail (convention) : cumul TOTAL des pauses créditées (paliers 15 min),
+    // indépendant de la RSE. 30 min cumulées exigées à 6h de travail, 45 min cumulées
+    // (15 de plus) exigées à 9h de travail.
+    function creditedSum(sessions){
+      var total = 0;
+      sessions.forEach(function(s){ total += credited(s.durationMin); });
+      return total;
+    }
+
+    var b1 = findRSEBreak(allSessions, -1);
+    var b2 = b1.satisfied ? findRSESingle45(allSessions, b1.endIdx) : { satisfied:false, label:'' };
+    var break1 = b1.satisfied ? true : null;
+    var break2 = b2.satisfied ? true : null;
+
+    var convTotal = creditedSum(allSessions);
+
+    // Repos journalier : soit un seul bloc ≥11h continu (repos normal), soit un
+    // seul bloc entre 9h et 11h (repos réduit), soit un bloc ≥3h suivi (dans cet
+    // ordre) d'un bloc ≥9h (repos fractionné) — ces trois formes valident le repos
+    // journalier ; seul le réduit ouvre le droit à l'amplitude de 15h (le fractionné reste à 13h).
+    function findRepos(sessions){
+      for(var i=0;i<sessions.length;i++){ if(sessions[i].durationMin>=660){ return { type:'continu', step:2 }; } }
+      for(var i3=0;i3<sessions.length;i3++){ if(sessions[i3].durationMin>=RULES.reposFrac9h && sessions[i3].durationMin<660){ return { type:'reduit', step:2 }; } }
+      var idx3 = -1;
+      for(var i2=0;i2<sessions.length;i2++){ if(sessions[i2].durationMin>=RULES.reposFrac3h){ idx3=i2; break; } }
+      if(idx3===-1) return { type:'aucun', step:0 };
+      for(var j=idx3+1;j<sessions.length;j++){ if(sessions[j].durationMin>=RULES.reposFrac9h){ return { type:'fractionne', step:2 }; } }
+      return { type:'fractionne', step:1 };
+    }
+    var repFrac = findRepos(allSessions);
+
+    function status(reached, satisfied){ if(satisfied) return 'ok'; if(!reached) return 'na'; return 'ko'; }
+    function colorOf(s){ return s==='ko' ? C.violation : C.safe; }
+
+    var s1 = status(conduiteMin>=RULES.seuil4h30, !!break1);
+    var s3 = status(conduiteMin>=RULES.seuil9h, !!break2);
+    var sConv3 = workTotalMin>=RULES.seuil3h ? (convTotal>=15 ? 'ok' : 'ko') : 'na';
+    var sConv6 = workTotalMin>=RULES.seuil6h ? (convTotal>=30 ? 'ok' : 'ko') : 'na';
+    var sConv9 = workTotalMin>=RULES.seuil9h ? (convTotal>=45 ? 'ok' : 'ko') : 'na';
+    var s4 = status(amplitudeMin>=RULES.seuilAmpl3h, pauseTotalMin>=RULES.requis3h);
+
+    var ampNuit = state.embaucheStart.getHours() < 5;
+    var ampExtensionOuverte = repFrac.step===2 && repFrac.type==='reduit';
+    var embaucheDateStr = state.embaucheStart.toISOString().slice(0,10);
+    var wkHisto = getWeeklyReduits();
+
+    // Tant qu'une coupure de 3h a été prise sans que le fractionnement soit terminé
+    // (9h restants), le repos fractionné (12h au total) ne peut plus rentrer dans les
+    // 24h que si l'amplitude est plafonnée à 12h (24 - 12), pas 13h.
+    var ampSeuilDefaut = repFrac.step===1 ? 720 : RULES.amplitudeAlerte;
+
+    // Filet de sécurité : si l'amplitude dépasse le plafond par défaut applicable
+    // (12h ou 13h selon la situation) sans repos réduit constaté (le fractionné ne
+    // l'ouvre pas), on bascule automatiquement le plafond à 15h (pour éviter une
+    // fausse alerte), en ajoutant la date du jour à l'historique hebdomadaire
+    // (visible à l'écran) s'il reste moins de 3 jours déjà utilisés.
+    if(!ampNuit && !ampExtensionOuverte && amplitudeMin > ampSeuilDefaut && !state.autoExtended15h){
+      if(wkHisto.dates.length < 3 || wkHisto.dates.indexOf(embaucheDateStr) !== -1){
+        wkHisto = { week: wkHisto.week, dates: addWeeklyReduit(embaucheDateStr) };
+        state.autoExtended15h = true;
+        saveState();
+      }
+    }
+    if(state.autoExtended15h) ampExtensionOuverte = true;
+
+    var ampAbsolue = ampNuit ? RULES.amplitudeAlerte : (ampExtensionOuverte ? RULES.amplitudeAbsolue : ampSeuilDefaut); // 13h si embauche avant 5h ; 15h seulement si repos réduit constaté ; sinon 12h si coupure de 3h en cours (fractionné non terminé), 13h par défaut
+    var ampAlerteSeuil = ampAbsolue - 60; // alerte 1h avant le plafond applicable
+    var ampColor = amplitudeMin>=ampAbsolue ? C.violation : amplitudeMin>=ampAlerteSeuil ? C.alerte : C.safe;
+    var ampDeadlineAlerte = new Date(state.embaucheStart.getTime() + ampAlerteSeuil*60000);
+    var ampDeadline15 = new Date(state.embaucheStart.getTime() + ampAbsolue*60000);
+    function deadlineWork(seuil){ return (state.mode!=='pause' && workTotalMin<seuil) ? new Date(now.getTime() + (seuil-workTotalMin)*60000) : null; }
+    function deadlineConduite(seuil){ return (state.mode==='conduite' && conduiteMin<seuil) ? new Date(now.getTime() + (seuil-conduiteMin)*60000) : null; }
+    var d270 = deadlineConduite(RULES.seuil4h30), d360 = deadlineWork(RULES.seuil6h), d540 = deadlineConduite(RULES.seuil9h);
+
+    document.getElementById('nowClock').textContent = fmtClock(now);
+    document.getElementById('embaucheClock').textContent = 'embauche ' + fmtClock(state.embaucheStart);
+
+    // Bascule automatique d'une pause "oubliée" en repos, si elle dure trop longtemps
+    // pour être une vraie pause (>1h, repère DREAL), puis en repos hebdomadaire si
+    // elle continue au-delà de 24h. Capture la position au moment de la bascule,
+    // comme si le chauffeur avait pensé à appuyer sur "Maintenant".
+    if(state.mode==='pause'){
+      if(!state.restTarget && segMin>=60){
+        state.restTarget = segMin>=1440 ? (segMin>=2700?2700:1440) : 660;
+        recordDecoucheStart(state.restTarget);
+        saveState();
+      } else if(state.restTarget && state.restTarget<=660 && segMin>=1440){
+        state.restTarget = segMin>=2700 ? 2700 : 1440; // devient un repos hebdomadaire
+        saveState();
+      } else if(state.restTarget===1440 && segMin>=2700){
+        state.restTarget = 2700;
+        saveState();
+      }
+    }
+
+    var bannerEl = document.getElementById('pauseBanner');
+    if(state.mode==='pause' && state.restTarget){
+      bannerEl.innerHTML = restBannerHTML(segMin, state.restTarget);
+    } else if(state.mode==='pause'){
+      var pauseTarget = 45;
+      var b1Completed = findRSEBreak(state.pauseSessions, -1);
+      if(!b1Completed.satisfied){
+        pauseTarget = b1Completed.pending==='15' ? 30 : b1Completed.pending==='30' ? 15 : 45;
+      }
+      bannerEl.innerHTML = pauseBannerHTML(segMin, pauseTarget);
+      [15,30,45,60].forEach(function(t){
+        if(segMin>=t && !state.pauseNotified[t]){
+          state.pauseNotified[t] = true;
+          notifyPalier(t);
+          saveState();
+        }
+      });
+    } else if(state.mode==='conduite'){
+      bannerEl.innerHTML = conduiteBannerHTML(segMin, conduiteMin);
+    } else {
+      bannerEl.innerHTML = '';
+    }
+
+    renderPauseEdit();
+    renderCurrentModeEdit();
+    renderEmbaucheEdit();
+    renderAddPause();
+    renderTotalsEdit();
+    renderDecouchesHisto();
+
+    var html = '';
+    var serviceLimit = state.embaucheStart.getHours() < 5 ? 600 : 720; // 10h avant 5h, 12h après 5h
+    var serviceLabel = serviceLimit===600 ? '10 h (embauche avant 5h)' : '12 h (embauche après 5h)';
+    var serviceColor = workTotalMin >= serviceLimit ? C.violation : workTotalMin >= serviceLimit-60 ? C.alerte : C.safe;
+
+    var weekLogDays = upsertWeekLog({
+      date: embaucheDateStr,
+      ampCap: ampAbsolue,
+      ampUsed: Math.round(amplitudeMin),
+      repType: repFrac.type,
+      serviceLimit: serviceLimit,
+      serviceUsed: Math.round(workTotalMin)
+    });
+    var conduiteHisto = upsertConduiteHisto(embaucheDateStr, Math.round(conduiteMin));
+    var serviceDeadline = deadlineWork(serviceLimit);
+    html += '<div class="sectionLabel" style="border-top:none;margin-top:0">Temps de service</div>';
+    html += cardHTML('Temps de service', serviceColor, workTotalMin/serviceLimit, '🕐',
+      fmt(workTotalMin), 'sur '+serviceLabel+' — hors pauses',
+      serviceDeadline ? 'Limite vers '+fmtClock(serviceDeadline) : (workTotalMin>=serviceLimit ? 'Limite dépassée' : 'En pause — décompte arrêté'), '');
+
+    html += cardHTML('Amplitude journée', ampColor, amplitudeMin/ampAbsolue, '⏱️',
+      fmt(amplitudeMin), ampNuit ? 'sur 13 h maxi (embauche avant 5h)' : ampExtensionOuverte ? 'sur 15 h (repos réduit constaté)' : ampSeuilDefaut===720 ? 'sur 12 h maxi (coupure de 3h en cours, fractionné)' : 'sur 13 h (15 h si repos réduit)',
+      '', (ampAbsolue===780 ? '13 h (max) à ' : ampAbsolue===720 ? '12 h (max) à ' : '15 h à ')+fmtClock(ampDeadline15));
+
+    if(!ampNuit){
+      var histoDates = wkHisto.dates.slice().sort();
+      var histoLabel = histoDates.length
+        ? histoDates.map(function(ds){ var p=ds.split('-'); return p[2]+'/'+p[1]; }).join(', ')
+        : 'aucun';
+      html += '<div style="font-size:10px;color:'+C.inkSoft+';margin:-6px 0 12px 4px;font-family:\'IBM Plex Mono\',monospace;">' +
+        'Amplitude 15h utilisée '+histoDates.length+'/3 cette semaine ('+histoLabel+')' +
+      '</div>';
+    }
+
+    html += '<div class="sectionLabel">Conduite</div>';
+
+    var rsePercent = s1!=='ok' ? conduiteMin/RULES.seuil4h30 : s3!=='ok' ? conduiteMin/RULES.seuil9h : 1;
+    var rseColor = (s1==='ko' || s3==='ko') ? C.violation : C.safe;
+    var rseBig = s1!=='ok' ? fmt(Math.max(0, RULES.seuil4h30-conduiteMin)) : s3!=='ok' ? fmt(Math.max(0, RULES.seuil9h-conduiteMin)) : '2/2 ✓';
+    var c1 = colorOf(s1), c3 = colorOf(s3);
+    var l1 = s1==='ok' ? b1.label : s1==='na' ? 'en cours' : 'manquante ⚠';
+    var l3 = s3==='ok' ? b2.label : s3==='na' ? 'à refaire' : 'non autorisée ⚠';
+    var rseSmall = '<span style="color:'+c1+';font-weight:600">① avant 4h30 : </span><span style="color:'+c1+'">'+l1+' (45 min mini, jusqu\'à 1h)</span><br>' +
+                   '<span style="color:'+c3+';font-weight:600">③ avant 9h : </span><span style="color:'+c3+'">'+l3+' — bloc unique 45 min, 10e h, 2×/sem. max</span>';
+    var rseFoot = s1!=='ok' && d270 ? 'Seuil 4h30 vers '+fmtClock(d270) : s3!=='ok' && d540 ? 'Seuil 9h vers '+fmtClock(d540) : '';
+
+    html += cardHTML('RSE — pauses conduite (4h30 et 9h)', rseColor, rsePercent, '☕',
+      rseBig, rseSmall, rseFoot, '');
+
+    var weekStart = mondayOf(now);
+    var prevWeekStart = new Date(weekStart); prevWeekStart.setDate(prevWeekStart.getDate()-7);
+    var weekStartStr = dstr(weekStart), prevWeekStartStr = dstr(prevWeekStart);
+    var thisWeekMin = 0, prevWeekMin = 0;
+    conduiteHisto.forEach(function(h){
+      if(h.date>=weekStartStr) thisWeekMin += h.conduiteMin;
+      else if(h.date>=prevWeekStartStr) prevWeekMin += h.conduiteMin;
+    });
+    var twoWeekMin = thisWeekMin + prevWeekMin;
+    var weekColor = thisWeekMin>=3360 ? C.violation : thisWeekMin>=3000 ? C.alerte : C.safe; // 56h=3360min, alerte dès 50h
+    var twoWeekColor = twoWeekMin>=5400 ? C.violation : twoWeekMin>=4800 ? C.alerte : C.safe; // 90h=5400min, alerte dès 80h
+    var conduiteWeekColor = (weekColor===C.violation || twoWeekColor===C.violation) ? C.violation : (weekColor===C.alerte || twoWeekColor===C.alerte) ? C.alerte : C.safe;
+    var conduiteDetail = conduiteHisto.filter(function(h){ return h.date>=prevWeekStartStr; })
+      .map(function(h){ var p=h.date.split('-'); return p[2]+'/'+p[1]+' : '+fmt(h.conduiteMin); }).join(' · ');
+    html += cardHTML('Conduite hebdo (56h) et bihebdo (90h)', conduiteWeekColor, thisWeekMin/3360, '📅',
+      fmtMin(thisWeekMin)+' cette sem.',
+      '<span style="color:'+weekColor+'">Semaine en cours : '+fmtMin(thisWeekMin)+' / 56h</span><br>' +
+      '<span style="color:'+twoWeekColor+'">Sur 2 semaines : '+fmtMin(twoWeekMin)+' / 90h</span>',
+      conduiteDetail || 'aucune conduite enregistrée', '');
+
+    var cc3 = colorOf(sConv3), cc6 = colorOf(sConv6), cc9 = colorOf(sConv9);
+    var lc3 = sConv3==='ok' ? Math.min(convTotal,15)+' min ✓' : sConv3==='na' ? (convTotal>=15 ? 'déjà acquis, en attente des 3h' : 'en cours') : 'insuffisant ⚠';
+    var lc6 = sConv6==='ok' ? (break1 ? 'couverte par la pause RSE ✓' : Math.min(convTotal,45)+' min ✓') : sConv6==='na' ? (convTotal>=30 ? 'déjà acquis, en attente des 6h' : 'en cours') : 'insuffisant ⚠';
+    var lc9 = sConv9==='ok' ? (convTotal>=45 && break1 ? 'couverte par la/les pause(s) RSE ✓' : Math.min(convTotal,45)+' min ✓') : sConv9==='na' ? (convTotal>=45 ? 'déjà acquis, en attente des 9h' : 'en cours') : 'insuffisant ⚠';
+    var convSmall = '<span style="color:'+cc3+';font-weight:600">3h : 15 min → </span><span style="color:'+cc3+'">'+lc3+'</span><br>' +
+                     '<span style="color:'+cc6+';font-weight:600">6h : 30 min → </span><span style="color:'+cc6+'">'+lc6+'</span><br>' +
+                     '<span style="color:'+cc9+';font-weight:600">9h : 45 min total → </span><span style="color:'+cc9+'">'+lc9+'</span>';
+    var convColor = (sConv3==='ko' || sConv6==='ko' || sConv9==='ko') ? C.violation : C.safe;
+    var convPercent = sConv9==='ok' ? 1 : convTotal/45;
+    var convFoot = 'Cumul (dont pauses RSE) : '+fmtMin(convTotal);
+
+    html += '<div class="sectionLabel">Pauses (code du travail)</div>';
+    html += cardHTML('Code du travail — cumul pauses (15, 30 puis 45 min)', convColor, convPercent, '⏳',
+      fmt(convTotal)+' cumulées', convSmall, convFoot, '');
+
+    html += '<div class="sectionLabel">Repos journalier (sommeil, fin de journée)</div>';
+    var ampDepassee13 = !ampNuit && amplitudeMin > RULES.amplitudeAlerte;
+    var repBig, repGuidance;
+    function nowBtnHTML(targetMin){
+      return '<button id="startRestNowBtn" data-target="'+targetMin+'" style="display:inline-block;padding:2px 10px;font-size:10px;border-radius:12px;border:1px solid '+C.safe+';background:none;color:'+C.safe+';margin-left:6px;vertical-align:middle;">▶️ Maintenant</button>';
+    }
+    var showNowBtn = state.mode!=='pause';
+    if(repFrac.step===2){
+      repBig = repFrac.type==='continu' ? '11h ✓' : repFrac.type==='reduit' ? '9h réduit ✓' : '3h + 9h ✓';
+      repGuidance = repFrac.type==='reduit' ? 'validé — ouvre l\'amplitude 15h' : 'validé';
+    } else if(ampDepassee13){
+      if(state.mode==='pause' && state.restTarget){
+        var repriseReduit = new Date(state.lastToggle.getTime() + state.restTarget*60000);
+        repBig = 'Repos en cours';
+        repGuidance = 'reprise possible vers '+fmtClock(repriseReduit)+' (9h réduit)';
+      } else {
+        repBig = ''+(showNowBtn?nowBtnHTML(540):'');
+        repGuidance = 'amplitude >13h : seul le repos réduit reste possible ce soir';
+      }
+    } else if(repFrac.step===1){
+      repBig = '3h faite';
+      repGuidance = 'reste 9h (fractionné) ou 11h continues ce soir'+(showNowBtn?nowBtnHTML(540):'');
+    } else {
+      if(state.mode==='pause' && state.restTarget){
+        var repriseX = new Date(state.lastToggle.getTime() + state.restTarget*60000);
+        repBig = 'Repos en cours';
+        repGuidance = 'reprise possible vers '+fmtClock(repriseX)+' ('+(state.restTarget===2700?'45h':state.restTarget===1440?'24h':state.restTarget===660?'11h':'9h')+')';
+      } else {
+        repBig = ''+(showNowBtn?nowBtnHTML(660):'');
+        repGuidance = '11h continues, 9h réduit, ou 3h + 9h';
+      }
+    }
+
+    html += cardHTML('Repos journalier', C.safe, repFrac.step/2, '🌙',
+      repBig, repGuidance, '', '');
+
+    html += '<div class="sectionLabel">Semaine (6 périodes de 24h max)</div>';
+    var nbJours = weekLogDays.length;
+    var repIcon = { continu:'11h', reduit:'réduit', fractionne:'fract.', aucun:'—' };
+    var joursDetail = weekLogDays.map(function(d){
+      var p = d.date.split('-');
+      return p[2]+'/'+p[1]+' ('+(d.ampCap/60)+'h max, '+repIcon[d.repType]+')';
+    }).join(' · ');
+    var semColor = nbJours>=6 ? C.violation : nbJours===5 ? C.alerte : C.safe;
+    html += cardHTML('Périodes de 24h cette semaine', semColor, nbJours/6, '📅',
+      nbJours+'/6 jours',
+      nbJours>=6 ? 'repos hebdomadaire obligatoire après ce jour' : nbJours===5 ? 'dernier jour possible avant repos hebdomadaire' : 'jours travaillés cette semaine',
+      joursDetail || 'aucun jour enregistré', '');
+
+    document.getElementById('cards').innerHTML = html;
+    var startRestNowBtn = document.getElementById('startRestNowBtn');
+    if(startRestNowBtn) startRestNowBtn.addEventListener('click', function(){
+      var t = Number(this.dataset.target) || 660;
+      state.restTarget = t;
+      recordDecoucheStart(t);
+      setMode('pause');
+    });
+
+    var conduiteBtn = document.getElementById('conduiteBtn');
+    var pauseBtn = document.getElementById('pauseBtn');
+    conduiteBtn.style.background = state.mode==='conduite' ? C.safe : C.alerte;
+    conduiteBtn.innerHTML = state.mode==='conduite' ? '⏹ Arrêter la conduite' : '🚚 Démarrer la conduite';
+    pauseBtn.style.background = state.mode==='pause' ? C.safe : C.alerte;
+    pauseBtn.innerHTML = state.mode==='pause' ? '▶️ Reprendre le travail' : '☕ Prendre une pause';
+    var modeLabel = state.mode==='conduite' ? '🚚 En conduite' : state.mode==='pause' ? '☕ En pause' : '🔧 Autre travail (chargement, admin…)';
+    document.getElementById('modeIndicator').textContent = 'Statut actuel : ' + modeLabel;
+  }
+
+  // ---- init default time ----
+  (function(){
+    var d = new Date();
+    document.getElementById('embaucheInput').value =
+      String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  })();
+
+  // ---- restauration d'une journée déjà en cours (veille / fermeture de l'app) ----
+  (function(){
+    var restored = loadState();
+    if(restored){
+      state = restored;
+      document.getElementById('setup').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      requestWakeLock();
+      syncDayToServer();
+      computeAndRender();
+    } else {
+      document.getElementById('setup').style.display = 'flex';
+    }
+  })();
+
+  document.getElementById('startBtn').addEventListener('click', function(){
+    var val = document.getElementById('embaucheInput').value || '06:00';
+    var parts = val.split(':').map(Number);
+    var d = new Date(); d.setHours(parts[0], parts[1], 0, 0);
+    state = { embaucheStart:d, mode:'travail', lastToggle:d, accConduiteMs:0, accTravailMs:0, accPauseMs:0, pauseSessions:[], pauseNotified:{}, autoExtended15h:false, restTarget:null };
+    document.getElementById('expiredMsg').style.display = 'none';
+    if(window.Notification && Notification.permission === 'default'){
+      try{ Notification.requestPermission(); }catch(e){}
+    }
+    saveState();
+    syncDayToServer();
+    document.getElementById('setup').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    requestWakeLock();
+    computeAndRender();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    state = null;
+    clearState();
+    if(wakeLock){ try{ wakeLock.release(); }catch(e){} wakeLock = null; }
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('setup').style.display = 'flex';
+  });
+
+  document.getElementById('settingsBtn').addEventListener('click', function(){
+    var panel = document.getElementById('settingsPanel');
+    panel.style.display = panel.style.display==='none' ? 'block' : 'none';
+  });
+
+  // ---- Historique des découchés (géolocalisation + adresse au début du repos journalier) ----
+  var DECOUCHES_KEY = 'rse_patoo_decouches_v1';
+  function getDecouches(){
+    try{ return JSON.parse(localStorage.getItem(DECOUCHES_KEY) || '[]'); }catch(e){ return []; }
+  }
+  function saveDecouches(list){
+    var cutoff = new Date(); cutoff.setDate(cutoff.getDate()-30);
+    var cutoffStr = cutoff.toISOString().slice(0,10);
+    list = list.filter(function(d){ return d.date>=cutoffStr; });
+    try{ localStorage.setItem(DECOUCHES_KEY, JSON.stringify(list)); }catch(e){}
+    return list;
+  }
+  function notifyDecouche(text){
+    if(navigator.vibrate) navigator.vibrate([120,60,120]);
+    if(window.Notification && Notification.permission==='granted'){
+      try{ new Notification('🌙 Découché enregistré', { body: text }); }catch(e){}
+    }
+    var el = document.getElementById('decoucheToast');
+    if(el){
+      el.textContent = '🌙 '+text;
+      el.style.display = 'block';
+      clearTimeout(el._t);
+      el._t = setTimeout(function(){ el.style.display = 'none'; }, 8000);
+    }
+  }
+  function recordDecoucheStart(targetMin){
+    var list = getDecouches();
+    var entry = { date: new Date().toISOString().slice(0,10), startAt: new Date().toISOString(), targetMin: targetMin, address: null, lat: null, lon: null, durationMin: null };
+    list.push(entry);
+    saveDecouches(list);
+    if(!('geolocation' in navigator)){
+      notifyDecouche('Position indisponible sur cet appareil.');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(function(pos){
+      var lat = pos.coords.latitude, lon = pos.coords.longitude;
+      var l0 = getDecouches();
+      if(l0.length){ l0[l0.length-1].lat = lat; l0[l0.length-1].lon = lon; saveDecouches(l0); }
+      fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lon+'&addressdetails=1')
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          var addr = data && data.display_name ? data.display_name : null;
+          if(addr){
+            var l = getDecouches();
+            if(l.length){ l[l.length-1].address = addr; saveDecouches(l); }
+            notifyDecouche(addr);
+          } else {
+            notifyDecouche('Coordonnées enregistrées ('+lat.toFixed(4)+', '+lon.toFixed(4)+') — adresse récupérée dès que possible.');
+          }
+        }).catch(function(){
+          // Pas de réseau au moment du clic : coordonnées déjà sauvegardées,
+          // l'adresse sera récupérée automatiquement dès que la connexion revient.
+          notifyDecouche('Pas de connexion — coordonnées enregistrées ('+lat.toFixed(4)+', '+lon.toFixed(4)+'), adresse récupérée dès que possible.');
+        });
+    }, function(){
+      notifyDecouche('Localisation refusée ou indisponible — découché enregistré sans adresse.');
+    }, { enableHighAccuracy:true, timeout:15000, maximumAge:0 });
+  }
+  function finalizeDecoucheDuration(durationMin){
+    var l = getDecouches();
+    if(l.length && l[l.length-1].durationMin===null){
+      l[l.length-1].durationMin = Math.round(durationMin);
+      saveDecouches(l);
+    }
+  }
+  // Réessaie de récupérer l'adresse des découchés qui n'en ont pas encore
+  // (coordonnées GPS déjà enregistrées, mais pas de réseau au moment du clic).
+  function retryPendingDecoucheAddresses(){
+    if(!navigator.onLine) return;
+    var list = getDecouches();
+    var pending = list.filter(function(d){ return d.lat!==null && !d.address; });
+    if(!pending.length) return;
+    pending.slice(0,3).forEach(function(d){
+      fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+d.lat+'&lon='+d.lon+'&addressdetails=1')
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          var addr = data && data.display_name ? data.display_name : null;
+          if(!addr) return;
+          var l2 = getDecouches();
+          var target = l2.find(function(x){ return x.startAt===d.startAt; });
+          if(target){ target.address = addr; saveDecouches(l2); renderDecouchesHisto(); }
+        }).catch(function(){});
+    });
+  }
+
+  function setMode(newMode){
+    if(!state || state.mode===newMode) return;
+    var n = new Date();
+    var elapsedMs = n - state.lastToggle;
+    if(state.mode==='conduite'){
+      state.accConduiteMs += elapsedMs;
+    } else if(state.mode==='travail'){
+      state.accTravailMs += elapsedMs;
+    } else if(state.mode==='pause'){
+      var durationMin = elapsedMs/60000;
+      var startWorkMin = (state.accConduiteMs+state.accTravailMs)/60000;
+      state.pauseSessions.push({startWorkMin:startWorkMin, durationMin:durationMin, startAt:state.lastToggle.toISOString(), endAt:n.toISOString()});
+      state.accPauseMs += elapsedMs;
+      if(state.restTarget) finalizeDecoucheDuration(durationMin);
+    }
+    state.lastToggle = n;
+    state.mode = newMode;
+    if(newMode==='pause') state.pauseNotified = {};
+    if(newMode!=='pause') state.restTarget = null;
+    saveState();
+    syncDayToServer();
+    computeAndRender();
+  }
+
+  // ---- Sauvegarde serveur de la journée (protection en cas de perte du téléphone) ----
+  // Best-effort : ne bloque jamais l'app si le réseau ou le serveur ne répond pas.
+  function syncDayToServer(){
+    try{
+      var access = JSON.parse(localStorage.getItem('rse_patoo_access') || 'null');
+      if(!access || !access.email || !state) return;
+      var now = new Date();
+      var segMin = (now - state.lastToggle) / 60000;
+      var conduiteMinNow = state.accConduiteMs/60000 + (state.mode==='conduite' ? segMin : 0);
+      var travailMinNow = state.accTravailMs/60000 + (state.mode==='travail' ? segMin : 0);
+      var pauseMinNow = state.accPauseMs/60000 + (state.mode==='pause' ? segMin : 0);
+      var amplitudeMinNow = (now - state.embaucheStart) / 60000;
+      var dateStr = state.embaucheStart.toISOString().slice(0,10);
+      fetch('/.netlify/functions/sync-day', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: access.email,
+          date: dateStr,
+          embauche: timeInputVal ? timeInputVal(state.embaucheStart.toISOString()) : null,
+          conduiteMin: conduiteMinNow,
+          travailMin: travailMinNow,
+          pauseMin: pauseMinNow,
+          amplitudeMin: amplitudeMinNow,
+          serviceUsedMin: conduiteMinNow + travailMinNow
+        })
+      }).catch(function(){});
+    }catch(e){}
+  }
+
+  // ---- Démarrage automatique de la conduite par détection GPS ----
+  // Ne déclenche JAMAIS l'arrêt : seul le bouton Pause (ou Conduite) arrête,
+  // toujours sous le contrôle du chauffeur. Fonctionne uniquement app ouverte
+  // au premier plan, écran allumé (limite des navigateurs, pas de notre app).
+  var AUTO_DETECT_KEY = 'rse_patoo_autodetect';
+  var geoWatchId = null;
+  var speedAboveCount = 0;
+  var SPEED_THRESHOLD_KMH = 5;
+  var READINGS_NEEDED = 3;
+
+  var stoppedSince = null;
+  var STOP_DURATION_MS = 2*60000; // 2 minutes à l'arrêt avant bascule auto vers "autre travail"
+
+  function onGeoPosition(pos){
+    var speedMs = pos.coords.speed;
+    if(speedMs===null || speedMs===undefined || speedMs<0){
+      showGeoStatus('GPS actif — vitesse indisponible sur ce point (réessaie...)', false);
+      return; // vitesse indisponible, on ignore ce point
+    }
+    var speedKmh = speedMs*3.6;
+    showGeoStatus('GPS actif — vitesse : '+speedKmh.toFixed(1)+' km/h', false);
+    if(speedKmh>=SPEED_THRESHOLD_KMH){
+      speedAboveCount++;
+      stoppedSince = null;
+    } else {
+      speedAboveCount = 0;
+      if(stoppedSince===null) stoppedSince = new Date();
+    }
+
+    // Démarrage auto : uniquement depuis "autre travail", jamais depuis une pause en cours.
+    if(speedAboveCount>=READINGS_NEEDED && state && state.mode==='travail'){
+      setMode('conduite');
+      if(navigator.vibrate) navigator.vibrate([120,60,120]);
+      speedAboveCount = 0;
+    }
+
+    // Arrêt auto : bascule vers "autre travail" (jamais vers Pause, qui reste
+    // toujours un choix volontaire du chauffeur) après 2 min sans mouvement.
+    if(stoppedSince && state && state.mode==='conduite' && (new Date() - stoppedSince) >= STOP_DURATION_MS){
+      setMode('travail');
+      if(navigator.vibrate) navigator.vibrate([120]);
+      stoppedSince = null;
+    }
+  }
+  function showGeoStatus(text, isError, showRetryBtn){
+    var row = document.getElementById('autoDetectRow');
+    if(!row) return;
+    var existing = document.getElementById('geoStatusMsg');
+    if(existing) existing.remove();
+    var wrap = document.createElement('div');
+    wrap.id = 'geoStatusMsg';
+    wrap.style.cssText = 'width:100%;text-align:center;font-size:10px;margin-top:4px;';
+    var p = document.createElement('div');
+    p.style.color = isError ? '#D9603F' : '#4F9C6E';
+    p.textContent = text;
+    wrap.appendChild(p);
+    if(showRetryBtn){
+      var btn = document.createElement('button');
+      btn.textContent = '🔓 Activer la localisation';
+      btn.className = 'pauseIconBtn';
+      btn.style.marginTop = '6px';
+      btn.addEventListener('click', function(){ startAutoDetect(); });
+      wrap.appendChild(document.createElement('br'));
+      wrap.appendChild(btn);
+      var help = document.createElement('div');
+      help.style.cssText = 'font-size:9px;color:var(--inkSoft);margin-top:6px;line-height:1.4;';
+      help.textContent = "Si ça ne marche toujours pas : ouvrez les réglages du site dans votre navigateur (icône ⓘ ou 🔒 à côté de l'adresse) → Localisation → Autoriser.";
+      wrap.appendChild(help);
+    }
+    row.appendChild(wrap);
+  }
+
+  function onGeoError(err){
+    var msg = 'GPS indisponible';
+    var isPermissionDenied = false;
+    if(err){
+      if(err.code===1){ msg = 'Permission de localisation refusée'; isPermissionDenied = true; }
+      else if(err.code===2) msg = 'Position GPS indisponible (signal faible)';
+      else if(err.code===3) msg = 'GPS trop lent à répondre (timeout)';
+    }
+    showGeoStatus(msg, true, isPermissionDenied);
+  }
+
+  function startAutoDetect(){
+    if(!('geolocation' in navigator)){
+      alert("La géolocalisation n'est pas disponible sur cet appareil/navigateur.");
+      document.getElementById('autoDetectToggle').checked = false;
+      return;
+    }
+    if(window.isSecureContext===false){
+      showGeoStatus('GPS bloqué : ouvrez cette page en HTTPS (pas en fichier local) pour que la localisation fonctionne', true);
+      document.getElementById('autoDetectToggle').checked = false;
+      return;
+    }
+    showGeoStatus('Recherche du signal GPS…', false);
+    geoWatchId = navigator.geolocation.watchPosition(onGeoPosition, onGeoError, {
+      enableHighAccuracy: true, maximumAge: 5000, timeout: 15000
+    });
+    try{ localStorage.setItem(AUTO_DETECT_KEY, '1'); }catch(e){}
+  }
+  function stopAutoDetect(){
+    if(geoWatchId!==null){ navigator.geolocation.clearWatch(geoWatchId); geoWatchId = null; }
+    speedAboveCount = 0;
+    var existing = document.getElementById('geoStatusMsg');
+    if(existing) existing.remove();
+    try{ localStorage.setItem(AUTO_DETECT_KEY, '0'); }catch(e){}
+  }
+
+  document.getElementById('autoDetectToggle').addEventListener('change', function(e){
+    if(e.target.checked){ startAutoDetect(); } else { stopAutoDetect(); }
+  });
+
+  (function(){
+    try{
+      if(localStorage.getItem(AUTO_DETECT_KEY) === '1'){
+        document.getElementById('autoDetectToggle').checked = true;
+        startAutoDetect();
+      }
+    }catch(e){}
+  })();
+
+  document.getElementById('conduiteBtn').addEventListener('click', function(){
+    if(!state) return;
+    setMode(state.mode==='conduite' ? 'travail' : 'conduite');
+  });
+  document.getElementById('pauseBtn').addEventListener('click', function(){
+    if(!state) return;
+    setMode(state.mode==='pause' ? 'travail' : 'pause');
+  });
+
+  setInterval(computeAndRender, 1000);
+  setInterval(syncDayToServer, 5*60000);
+  setInterval(retryPendingDecoucheAddresses, 5*60000);
+  window.addEventListener('online', retryPendingDecoucheAddresses);
+
+  // ---- Enregistrement du service worker (requis pour l'installabilité PWA) ----
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js').catch(function(){});
+    });
+  }
+
+  // ---- Correction manuelle d'une pause (heure ou durée mal enregistrée) ----
+  var pauseEditingIdx = -1;
+  function timeInputVal(iso){
+    var d = new Date(iso);
+    return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  }
+  function renderPauseEdit(){
+    var el = document.getElementById('pauseEdit');
+    if(!el || !state) return;
+    var sessions = state.pauseSessions;
+    if(!sessions.length){ el.innerHTML=''; return; }
+    var rows = '<div class="sectionLabel" style="border-top:none;margin-top:0">Corriger une pause</div><div class="restBox">';
+    sessions.forEach(function(s, i){
+      if(!s.startAt || !s.endAt){ return; } // anciennes sessions sans horodatage, non éditables
+      if(pauseEditingIdx === i){
+        rows += '<div class="pauseEditForm">' +
+          '<input type="time" id="editStart'+i+'" value="'+timeInputVal(s.startAt)+'" />' +
+          '<input type="number" id="editDur'+i+'" value="'+Math.round(s.durationMin)+'" min="1" /> min' +
+          '<button class="pauseIconBtn" id="saveEdit'+i+'">✓</button>' +
+          '<button class="pauseIconBtn" id="cancelEdit'+i+'">✕</button>' +
+        '</div>';
+      } else {
+        rows += '<div class="pauseRow">' +
+          '<span>'+timeInputVal(s.startAt)+'–'+timeInputVal(s.endAt)+' ('+fmtMin(s.durationMin)+')</span>' +
+          '<span class="pauseRowBtns">' +
+            '<button class="pauseIconBtn" id="editBtn'+i+'">✏️</button>' +
+            '<button class="pauseIconBtn" id="delBtn'+i+'">🗑️</button>' +
+          '</span>' +
+        '</div>';
+      }
+    });
+    rows += '</div>';
+    el.innerHTML = rows;
+    sessions.forEach(function(s, i){
+      if(!s.startAt || !s.endAt) return;
+      if(pauseEditingIdx === i){
+        var saveBtn = document.getElementById('saveEdit'+i);
+        var cancelBtn = document.getElementById('cancelEdit'+i);
+        if(saveBtn) saveBtn.addEventListener('click', function(){
+          var newStartStr = document.getElementById('editStart'+i).value;
+          var newDur = Number(document.getElementById('editDur'+i).value) || s.durationMin;
+          var oldStart = new Date(s.startAt);
+          var newStart = new Date(oldStart);
+          var parts = newStartStr.split(':');
+          newStart.setHours(Number(parts[0]), Number(parts[1]), 0, 0);
+          var newEnd = new Date(newStart.getTime() + newDur*60000);
+          var oldDur = s.durationMin;
+          s.startAt = newStart.toISOString();
+          s.endAt = newEnd.toISOString();
+          s.durationMin = newDur;
+          state.accPauseMs += (newDur - oldDur) * 60000;
+          pauseEditingIdx = -1;
+          saveState();
+          computeAndRender();
+        });
+        if(cancelBtn) cancelBtn.addEventListener('click', function(){ pauseEditingIdx=-1; renderPauseEdit(); });
+      } else {
+        var editBtn = document.getElementById('editBtn'+i);
+        var delBtn = document.getElementById('delBtn'+i);
+        if(editBtn) editBtn.addEventListener('click', function(){ pauseEditingIdx=i; renderPauseEdit(); });
+        if(delBtn) delBtn.addEventListener('click', function(){
+          state.accPauseMs -= s.durationMin*60000;
+          state.pauseSessions.splice(i,1);
+          pauseEditingIdx = -1;
+          saveState();
+          computeAndRender();
+        });
+      }
+    });
+  }
+
+  // ---- Correction de l'heure de début de l'état en cours (conduite/travail/pause) ----
+  // Utile si le bouton a été pressé en retard : recale lastToggle sans attendre
+  // que la session soit terminée (contrairement à "Corriger une pause").
+  var modeEditOpen = false;
+  function renderCurrentModeEdit(){
+    var el = document.getElementById('currentModeEdit');
+    if(!el || !state) return;
+    var modeLabel = state.mode==='conduite' ? 'de la conduite' : state.mode==='pause' ? 'de la pause' : 'du travail (autre)';
+    if(modeEditOpen){
+      if(el.dataset.editing==='1') return; // déjà affiché : ne pas reconstruire, ça fermerait le sélecteur d'heure natif
+      el.dataset.editing = '1';
+      el.innerHTML =
+        '<div class="restBox">' +
+          '<div class="cardTitle">Corriger le début '+modeLabel+' en cours</div>' +
+          '<input type="time" id="modeStartInput" class="formInput" value="'+timeInputVal(state.lastToggle.toISOString())+'" style="margin:8px 0;" />' +
+          '<div style="display:flex;gap:8px;">' +
+            '<button id="saveModeStartBtn" class="pauseIconBtn" style="flex:1;">✓ Valider</button>' +
+            '<button id="cancelModeStartBtn" class="pauseIconBtn" style="flex:1;">✕ Annuler</button>' +
+          '</div>' +
+        '</div>';
+      document.getElementById('saveModeStartBtn').addEventListener('click', function(){
+        var val = document.getElementById('modeStartInput').value;
+        if(!val) return;
+        var parts = val.split(':');
+        var newStart = new Date(state.lastToggle);
+        newStart.setHours(Number(parts[0]), Number(parts[1]), 0, 0);
+        state.lastToggle = newStart;
+        modeEditOpen = false;
+        saveState();
+        computeAndRender();
+      });
+      document.getElementById('cancelModeStartBtn').addEventListener('click', function(){
+        modeEditOpen = false;
+        renderCurrentModeEdit();
+      });
+    } else {
+      el.dataset.editing = '0';
+      el.innerHTML =
+        '<div class="restBox" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">' +
+          '<span style="font-size:12px;color:'+C.inkSoft+'">Début '+modeLabel+' en cours : <span class="mono">'+timeInputVal(state.lastToggle.toISOString())+'</span></span>' +
+          '<button id="editModeStartBtn" class="pauseIconBtn">✏️ Corriger</button>' +
+        '</div>';
+      var btn = document.getElementById('editModeStartBtn');
+      if(btn) btn.addEventListener('click', function(){ modeEditOpen = true; renderCurrentModeEdit(); });
+    }
+  }
+
+  // ---- Correction de l'heure d'embauche (si erreur de saisie au départ) ----
+  var embaucheEditOpen = false;
+  function renderEmbaucheEdit(){
+    var el = document.getElementById('embaucheEdit');
+    if(!el || !state) return;
+    if(embaucheEditOpen){
+      if(el.dataset.editing==='1') return; // ne pas reconstruire, ça fermerait le sélecteur d'heure natif
+      el.dataset.editing = '1';
+      el.innerHTML =
+        '<div class="restBox">' +
+          '<div class="cardTitle">Corriger l\'heure d\'embauche</div>' +
+          '<input type="time" id="embaucheEditInput" class="formInput" value="'+timeInputVal(state.embaucheStart.toISOString())+'" style="margin:8px 0;" />' +
+          '<div style="display:flex;gap:8px;">' +
+            '<button id="saveEmbaucheBtn" class="pauseIconBtn" style="flex:1;">✓ Valider</button>' +
+            '<button id="cancelEmbaucheBtn" class="pauseIconBtn" style="flex:1;">✕ Annuler</button>' +
+          '</div>' +
+        '</div>';
+      document.getElementById('saveEmbaucheBtn').addEventListener('click', function(){
+        var val = document.getElementById('embaucheEditInput').value;
+        if(!val) return;
+        var parts = val.split(':');
+        var newStart = new Date(state.embaucheStart);
+        newStart.setHours(Number(parts[0]), Number(parts[1]), 0, 0);
+        state.embaucheStart = newStart;
+        embaucheEditOpen = false;
+        saveState();
+        computeAndRender();
+      });
+      document.getElementById('cancelEmbaucheBtn').addEventListener('click', function(){
+        embaucheEditOpen = false;
+        renderEmbaucheEdit();
+      });
+    } else {
+      el.dataset.editing = '0';
+      el.innerHTML =
+        '<div class="restBox" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">' +
+          '<span style="font-size:12px;color:'+C.inkSoft+'">Heure d\'embauche : <span class="mono">'+timeInputVal(state.embaucheStart.toISOString())+'</span></span>' +
+          '<button id="editEmbaucheBtn" class="pauseIconBtn">✏️ Corriger</button>' +
+        '</div>';
+      var btn = document.getElementById('editEmbaucheBtn');
+      if(btn) btn.addEventListener('click', function(){ embaucheEditOpen = true; renderEmbaucheEdit(); });
+    }
+  }
+
+  // ---- Ajouter une pause complètement oubliée (jamais enclenchée) ----
+  var addPauseOpen = false;
+  function renderAddPause(){
+    var el = document.getElementById('addPauseEdit');
+    if(!el || !state) return;
+    if(addPauseOpen){
+      if(el.dataset.editing==='1') return;
+      el.dataset.editing = '1';
+      el.innerHTML =
+        '<div class="restBox">' +
+          '<div class="cardTitle">Ajouter une pause oubliée</div>' +
+          '<div style="display:flex;gap:8px;align-items:center;margin:8px 0;">' +
+            '<input type="time" id="addPauseStart" class="formInput" style="flex:1;" />' +
+            '<input type="number" id="addPauseDur" class="formInput" placeholder="min" min="1" style="width:80px;" />' +
+          '</div>' +
+          '<div style="font-size:10px;color:'+C.inkSoft+';margin-bottom:8px;">Heure de début de la pause, puis sa durée en minutes.</div>' +
+          '<div style="display:flex;gap:8px;">' +
+            '<button id="saveAddPauseBtn" class="pauseIconBtn" style="flex:1;">✓ Ajouter</button>' +
+            '<button id="cancelAddPauseBtn" class="pauseIconBtn" style="flex:1;">✕ Annuler</button>' +
+          '</div>' +
+          '<div style="font-size:10px;color:'+C.inkSoft+';margin-top:8px;">⚠️ Ce temps est ajouté au total des pauses. S\'il avait été compté par erreur en conduite/travail, pensez aussi à ajuster les totaux cumulés ci-dessous.</div>' +
+        '</div>';
+      document.getElementById('saveAddPauseBtn').addEventListener('click', function(){
+        var startVal = document.getElementById('addPauseStart').value;
+        var dur = Number(document.getElementById('addPauseDur').value);
+        if(!startVal || !dur || dur<=0) return;
+        var parts = startVal.split(':');
+        var startAt = new Date(state.embaucheStart);
+        startAt.setHours(Number(parts[0]), Number(parts[1]), 0, 0);
+        if(startAt < state.embaucheStart) startAt.setDate(startAt.getDate()+1);
+        var endAt = new Date(startAt.getTime() + dur*60000);
+        var startWorkMin = (state.accConduiteMs+state.accTravailMs)/60000;
+        state.pauseSessions.push({startWorkMin:startWorkMin, durationMin:dur, startAt:startAt.toISOString(), endAt:endAt.toISOString()});
+        state.accPauseMs += dur*60000;
+        addPauseOpen = false;
+        saveState();
+        computeAndRender();
+      });
+      document.getElementById('cancelAddPauseBtn').addEventListener('click', function(){
+        addPauseOpen = false;
+        renderAddPause();
+      });
+    } else {
+      el.dataset.editing = '0';
+      el.innerHTML = '<button id="openAddPauseBtn" class="restNowBtn" style="width:100%;padding:10px;font-size:12px;margin-bottom:14px;">➕ Ajouter une pause oubliée</button>';
+      var btn = document.getElementById('openAddPauseBtn');
+      if(btn) btn.addEventListener('click', function(){ addPauseOpen = true; renderAddPause(); });
+    }
+  }
+
+  // ---- Ajuster directement les totaux cumulés (conduite / autre travail / pause) ----
+  // Filet de sécurité général : corrige le temps de service, la conduite ou les
+  // pauses en cas d'erreur, sans avoir à retracer chaque bascule de la journée.
+  var totalsEditOpen = false;
+  function msToHM(ms){ var totalMin = Math.round(ms/60000); return { h: Math.floor(totalMin/60), m: totalMin%60 }; }
+  function renderTotalsEdit(){
+    var el = document.getElementById('totalsEdit');
+    if(!el || !state) return;
+    if(totalsEditOpen){
+      if(el.dataset.editing==='1') return;
+      el.dataset.editing = '1';
+      var c = msToHM(state.accConduiteMs), t = msToHM(state.accTravailMs), p = msToHM(state.accPauseMs);
+      function row(label, idH, idM, hm){
+        return '<div style="margin-bottom:10px;">' +
+          '<div class="cardTitle">'+label+'</div>' +
+          '<div style="display:flex;gap:6px;align-items:center;">' +
+            '<input type="number" id="'+idH+'" class="formInput" value="'+hm.h+'" min="0" style="width:70px;" /><span style="font-size:12px;color:'+C.inkSoft+'">h</span>' +
+            '<input type="number" id="'+idM+'" class="formInput" value="'+hm.m+'" min="0" max="59" style="width:70px;" /><span style="font-size:12px;color:'+C.inkSoft+'">min</span>' +
+          '</div>' +
+        '</div>';
+      }
+      el.innerHTML =
+        '<div class="restBox">' +
+          '<div class="cardTitle" style="margin-bottom:10px;">Ajuster les totaux cumulés de la journée</div>' +
+          row('Conduite (cumulée, déjà écoulée)', 'totC_h', 'totC_m', c) +
+          row('Autre travail (cumulé)', 'totT_h', 'totT_m', t) +
+          row('Pause (cumulée)', 'totP_h', 'totP_m', p) +
+          '<div style="font-size:10px;color:'+C.inkSoft+';margin-bottom:10px;">Ne modifie pas la session en cours, seulement ce qui est déjà comptabilisé avant elle.</div>' +
+          '<div style="display:flex;gap:8px;">' +
+            '<button id="saveTotalsBtn" class="pauseIconBtn" style="flex:1;">✓ Valider</button>' +
+            '<button id="cancelTotalsBtn" class="pauseIconBtn" style="flex:1;">✕ Annuler</button>' +
+          '</div>' +
+        '</div>';
+      document.getElementById('saveTotalsBtn').addEventListener('click', function(){
+        var ch = Number(document.getElementById('totC_h').value)||0, cm = Number(document.getElementById('totC_m').value)||0;
+        var th = Number(document.getElementById('totT_h').value)||0, tm = Number(document.getElementById('totT_m').value)||0;
+        var ph = Number(document.getElementById('totP_h').value)||0, pm = Number(document.getElementById('totP_m').value)||0;
+        state.accConduiteMs = (ch*60+cm)*60000;
+        state.accTravailMs = (th*60+tm)*60000;
+        state.accPauseMs = (ph*60+pm)*60000;
+        totalsEditOpen = false;
+        saveState();
+        computeAndRender();
+      });
+      document.getElementById('cancelTotalsBtn').addEventListener('click', function(){
+        totalsEditOpen = false;
+        renderTotalsEdit();
+      });
+    } else {
+      el.dataset.editing = '0';
+      el.innerHTML = '<button id="openTotalsBtn" class="restNowBtn" style="width:100%;padding:10px;font-size:12px;margin-bottom:14px;">🛠️ Ajuster les totaux (conduite / travail / pause)</button>';
+      var btn = document.getElementById('openTotalsBtn');
+      if(btn) btn.addEventListener('click', function(){ totalsEditOpen = true; renderTotalsEdit(); });
+    }
+  }
+
+  // ---- Affichage de l'historique des découchés (30 jours) ----
+  // ---- Feuille de route mensuelle (PL/SPL) ----
+  var FR_KEY = 'rse_patoo_feuille_route_v1';
+  var FR_JOURS = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  function getFRData(){
+    try{ return JSON.parse(localStorage.getItem(FR_KEY) || '{}'); }catch(e){ return {}; }
+  }
+  function saveFRData(data){
+    try{ localStorage.setItem(FR_KEY, JSON.stringify(data)); }catch(e){}
+  }
+  function frCurrentMonth(){
+    var v = document.getElementById('frMonthInput').value;
+    if(v) return v;
+    var d = new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  }
+  function frDaysInMonth(monthStr){
+    var parts = monthStr.split('-');
+    var y = Number(parts[0]), m = Number(parts[1]);
+    return new Date(y, m, 0).getDate();
+  }
+  function frDecoucheDatesSet(){
+    var s = {};
+    getDecouches().forEach(function(d){ s[d.date] = true; });
+    return s;
+  }
+
+  function renderFeuilleRoute(){
+    var wrap = document.getElementById('frTableWrap');
+    if(!wrap) return;
+
+    // Initialise le mois affiché (mois en cours par défaut) une seule fois.
+    var monthInput = document.getElementById('frMonthInput');
+    if(!monthInput.value){
+      var d = new Date();
+      monthInput.value = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    }
+    var monthStr = monthInput.value;
+    var allData = getFRData();
+    var monthData = allData[monthStr] || { nom:'', prenom:'', days:{} };
+
+    document.getElementById('frNom').value = monthData.nom || '';
+    document.getElementById('frPrenom').value = monthData.prenom || '';
+    document.getElementById('frAttestation').checked = !!monthData.attestation;
+
+    var nbJours = frDaysInMonth(monthStr);
+    var decoucheDates = frDecoucheDatesSet();
+    var parts = monthStr.split('-');
+    var y = Number(parts[0]), m = Number(parts[1]);
+
+    var html = '<table class="frTable"><thead><tr>' +
+      '<th>Jour</th><th>Ville d\'arrivée</th><th>Étranger</th><th>P.déj<br>&lt;5h</th><th>Repas<br>midi</th><th>Repas<br>soir</th><th>Découcher</th><th>Absence</th><th>Frais WE</th>' +
+    '</tr></thead><tbody>';
+
+    for(var day=1; day<=nbJours; day++){
+      var dateObj = new Date(y, m-1, day);
+      var dateStr = y+'-'+String(m).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+      var dow = dateObj.getDay();
+      var isWeekend = (dow===0 || dow===6);
+      var rec = monthData.days[dateStr] || {};
+      var autoDecouche = decoucheDates[dateStr] && rec.decoucher===undefined;
+      var decoucherChecked = rec.decoucher!==undefined ? rec.decoucher : !!autoDecouche;
+
+      var absenceOpts = ['', 'CP', 'CSS', 'Formation', 'Maladie'];
+      var fraisOpts = ['', 'RP', 'WEB', 'Tour'];
+      function frSelect(field, opts, current){
+        return '<select data-field="'+field+'">' + opts.map(function(o){
+          return '<option value="'+o+'" '+(current===o?'selected':'')+'>'+(o||'—')+'</option>';
+        }).join('') + '</select>';
+      }
+
+      html += '<tr class="'+(isWeekend?'frWeekend':'')+'" data-date="'+dateStr+'">' +
+        '<td>'+FR_JOURS[dow].slice(0,3)+' '+day+'</td>' +
+        '<td class="frCity"><input type="text" data-field="ville" value="'+(rec.ville||'').replace(/"/g,'&quot;')+'" /></td>' +
+        '<td><input type="checkbox" data-field="etranger" '+(rec.etranger?'checked':'')+' /></td>' +
+        '<td><input type="checkbox" data-field="pdej" '+(rec.pdej?'checked':'')+' /></td>' +
+        '<td><input type="checkbox" data-field="midi" '+(rec.midi?'checked':'')+' /></td>' +
+        '<td><input type="checkbox" data-field="soir" '+(rec.soir?'checked':'')+' /></td>' +
+        '<td><input type="checkbox" data-field="decoucher" '+(decoucherChecked?'checked':'')+' /></td>' +
+        '<td class="frCity">'+frSelect('absence', absenceOpts, rec.absence||'')+'</td>' +
+        '<td class="frCity">'+frSelect('frais', fraisOpts, rec.frais||'')+'</td>' +
+      '</tr>';
+    }
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+
+    // Totaux
+    var totals = { etranger:0, pdej:0, midi:0, soir:0, decoucher:0 };
+    for(var d2=1; d2<=nbJours; d2++){
+      var ds = y+'-'+String(m).padStart(2,'0')+'-'+String(d2).padStart(2,'0');
+      var r = monthData.days[ds] || {};
+      var autoD = decoucheDates[ds] && r.decoucher===undefined;
+      var decoucherOn = r.decoucher!==undefined ? r.decoucher : !!autoD;
+      if(r.etranger) totals.etranger++;
+      if(r.pdej) totals.pdej++;
+      if(r.midi) totals.midi++;
+      if(r.soir) totals.soir++;
+      if(decoucherOn) totals.decoucher++;
+    }
+    document.getElementById('frTotals').textContent =
+      'Total : Étranger '+totals.etranger+' · P.déj '+totals.pdej+' · Repas midi '+totals.midi+' · Repas soir '+totals.soir+' · Découcher '+totals.decoucher;
+
+    // Sauvegarde à chaque saisie
+    wrap.querySelectorAll('input, select').forEach(function(inp){
+      inp.addEventListener('change', function(){
+        var tr = this.closest('tr');
+        var ds = tr.dataset.date;
+        var field = this.dataset.field;
+        var val = this.type==='checkbox' ? this.checked : this.value;
+        var data = getFRData();
+        var md = data[monthStr] || { nom:'', prenom:'', days:{} };
+        md.days[ds] = md.days[ds] || {};
+        md.days[ds][field] = val;
+        data[monthStr] = md;
+        saveFRData(data);
+        renderFeuilleRoute();
+      });
+    });
+  }
+
+  (function(){
+    var monthInput = document.getElementById('frMonthInput');
+    var nomInput = document.getElementById('frNom');
+    var prenomInput = document.getElementById('frPrenom');
+    var attInput = document.getElementById('frAttestation');
+    if(!monthInput) return;
+
+    function saveHeader(){
+      var data = getFRData();
+      var monthStr = frCurrentMonth();
+      var md = data[monthStr] || { nom:'', prenom:'', days:{} };
+      md.nom = nomInput.value;
+      md.prenom = prenomInput.value;
+      md.attestation = attInput.checked;
+      data[monthStr] = md;
+      saveFRData(data);
+    }
+
+    monthInput.addEventListener('change', renderFeuilleRoute);
+    nomInput.addEventListener('change', function(){ saveHeader(); });
+    prenomInput.addEventListener('change', function(){ saveHeader(); });
+    attInput.addEventListener('change', function(){ saveHeader(); });
+
+    document.getElementById('printFeuilleRouteBtn').addEventListener('click', function(){
+      var monthStr = frCurrentMonth();
+      var parts = monthStr.split('-');
+      var moisNoms = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+      document.getElementById('frPrintMonth').textContent = moisNoms[Number(parts[1])-1]+' '+parts[0];
+      document.getElementById('frPrintNom').textContent = nomInput.value || '—';
+      document.getElementById('frPrintPrenom').textContent = prenomInput.value || '—';
+      var attEl = document.getElementById('frPrintSignature');
+      attEl.textContent = attInput.checked
+        ? 'Signature : ✓ attesté(e) le '+new Date().toLocaleDateString('fr-FR')
+        : 'Signature : non attesté(e)';
+      document.body.classList.add('printing-feuille');
+      window.print();
+      setTimeout(function(){ document.body.classList.remove('printing-feuille'); }, 500);
+    });
+
+    renderFeuilleRoute();
+  })();
+
+  function renderDecouchesHisto(){
+    var el = document.getElementById('decouchesHisto');
+    if(!el) return;
+    var list = getDecouches().slice().reverse();
+    if(!list.length){ el.innerHTML = ''; return; }
+    var rows = list.map(function(d){
+      var dt = new Date(d.startAt);
+      var dateLbl = dt.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+' '+dt.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+      var durLbl = d.durationMin!==null ? fmtMin(d.durationMin) : 'en cours';
+      var addrLbl = d.address || (d.lat!==null ? ('📍 '+d.lat.toFixed(4)+', '+d.lon.toFixed(4)+' (adresse en attente...)') : 'position en cours...');
+      return '<div class="pauseRow" style="display:block;">' +
+        '<div><b>'+dateLbl+'</b> — '+durLbl+'</div>' +
+        '<div style="color:'+C.inkSoft+';font-size:11px;">'+addrLbl+'</div>' +
+      '</div>';
+    }).join('');
+    el.innerHTML = '<div class="restBox">' +
+      '<div class="cardTitle" style="margin-bottom:8px;">🌙 Découchés (30 derniers jours)</div>' +
+      rows +
+    '</div>';
+  }
+
+  // ---- Export PDF de la journée (impression navigateur) ----
+  document.getElementById('exportPdfBtn').addEventListener('click', function(){
+    try{
+      if(typeof window.print !== 'function') throw new Error('print indisponible');
+      window.print();
+    }catch(e){
+      alert("L'impression ne fonctionne pas dans cet aperçu. Ouvrez d'abord cette page dans Safari ou Chrome (pas dans l'aperçu de l'app), puis réessayez.");
+    }
+  });
+
+  // ---- Calculateur : à quelle heure peut-on redémarrer après 24h ou 45h de repos hebdomadaire ----
+  function toLocalInputValue(d){
+    var pad = function(n){ return String(n).padStart(2,'0'); };
+    return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
+  }
+  function fmtClockDate(d){
+    return d.toLocaleDateString('fr-FR',{weekday:'short',day:'2-digit',month:'2-digit'})+' à '+fmtClock(d);
+  }
+  function renderWeeklyRestCalc(){
+    var el = document.getElementById('weeklyRestCalc');
+    if(!el) return;
+    var startVal = el.dataset.start || toLocalInputValue(new Date());
+    var startDate = new Date(startVal);
+    var end24 = new Date(startDate.getTime() + 24*3600000);
+    var end45 = new Date(startDate.getTime() + 45*3600000);
+    el.innerHTML =
+      '<div class="sectionLabel" style="border-top:none;margin-top:0">Reprise après repos hebdomadaire</div>' +
+      '<div class="restBox">' +
+        '<div class="cardTitle">Début du repos hebdomadaire</div>' +
+        '<input type="datetime-local" id="restStartInput" value="'+startVal+'" />' +
+        '<button id="restNowBtn" class="restNowBtn">Maintenant</button>' +
+        '<div class="restResult"><span style="color:'+C.alerte+'">Reprise possible après 24h (réduit)</span><span style="color:'+C.alerte+'">'+fmtClockDate(end24)+'</span></div>' +
+        '<div class="restResult"><span style="color:'+C.safe+'">Reprise possible après 45h (normal)</span><span style="color:'+C.safe+'">'+fmtClockDate(end45)+'</span></div>' +
+        '<div style="font-size:10px;color:'+C.inkSoft+';margin-top:8px;line-height:1.4;">Un repos réduit (24h à &lt;45h) doit être compensé par un repos équivalent, accolé à un autre repos d\'au moins 9h, avant la fin de la 3e semaine suivante.</div>' +
+      '</div>';
+    el.dataset.start = startVal;
+    document.getElementById('restStartInput').addEventListener('change', function(e){
+      el.dataset.start = e.target.value;
+      renderWeeklyRestCalc();
+    });
+    document.getElementById('restNowBtn').addEventListener('click', function(){
+      el.dataset.start = toLocalInputValue(new Date());
+      renderWeeklyRestCalc();
+    });
+  }
+  renderWeeklyRestCalc();
+})();
+</script>
+</body>
+</html>
