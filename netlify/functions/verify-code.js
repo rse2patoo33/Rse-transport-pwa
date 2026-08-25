@@ -83,7 +83,11 @@ exports.handler = async (event) => {
       `Compte activé : ${row.last_name || ''} ${row.first_name || ''} (${cleanEmail})\nTéléphone : ${row.phone || '—'}\nAppareil (id local) : ${deviceId}\nDate : ${new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })}`
     );
 
-    return { statusCode: 200, body: JSON.stringify({ valid: true }) };
+    return { statusCode: 200, body: JSON.stringify({
+valid: true,
+  access_expires_at: row.access_expires_at,
+  is_trial: row.is_trial
+}) };
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ valid: false, error: err.message }) };
   }
