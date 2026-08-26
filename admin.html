@@ -27,10 +27,15 @@
   .badge.ok{ background:#4F9C6E33; color:var(--safe); }
   .badge.warn{ background:#E3A54233; color:var(--alerte); }
   .badge.bad{ background:#D9603F33; color:var(--violation); }
-  #driversTable{ display:none; }
+  .badge.count{ background:var(--violation); color:#fff; margin-left:6px; }
+  #driversTable, #alertsTable{ display:none; }
   .err{ color:var(--violation); font-size:12px; margin-top:8px; }
   .histoBox{ margin-top:6px; font-size:11px; color:var(--inkSoft); }
   .refreshRow{ display:flex; justify-content:space-between; align-items:center; margin-top:20px; }
+  .tabs{ display:flex; gap:8px; margin-top:16px; }
+  .tab{ padding:10px 16px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--inkSoft); font-weight:600; font-size:13px; cursor:pointer; }
+  .tab.active{ background:var(--accent); color:#1B1200; border-color:var(--accent); }
+  .emptyMsg{ color:var(--inkSoft); font-size:13px; margin-top:16px; }
 </style>
 </head>
 <body>
@@ -47,24 +52,51 @@
   <h1>🚚 Gestion des chauffeurs</h1>
   <div class="sub">RSE Transport — Patoo</div>
 
-  <div class="refreshRow">
-    <button id="refreshBtn" class="btn secondary">↻ Actualiser</button>
-    <span id="countLabel" class="sub" style="margin:0;"></span>
+  <div class="tabs">
+    <button id="tabDrivers" class="tab active">Chauffeurs</button>
+    <button id="tabAlerts" class="tab">⚠️ Anomalies <span id="alertsCountBadge"></span></button>
   </div>
 
-  <table id="driversTable">
-    <thead>
-      <tr>
-        <th>Chauffeur</th>
-        <th>Contact</th>
-        <th>Statut</th>
-        <th>Appareil</th>
-        <th>Accès expire</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody id="driversBody"></tbody>
-  </table>
+  <div id="driversSection">
+    <div class="refreshRow">
+      <button id="refreshBtn" class="btn secondary">↻ Actualiser</button>
+      <span id="countLabel" class="sub" style="margin:0;"></span>
+    </div>
+
+    <table id="driversTable">
+      <thead>
+        <tr>
+          <th>Chauffeur</th>
+          <th>Contact</th>
+          <th>Statut</th>
+          <th>Appareil</th>
+          <th>Accès expire</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="driversBody"></tbody>
+    </table>
+  </div>
+
+  <div id="alertsSection" style="display:none;">
+    <div class="refreshRow">
+      <button id="refreshAlertsBtn" class="btn secondary">↻ Actualiser</button>
+      <span id="alertsCountLabel" class="sub" style="margin:0;"></span>
+    </div>
+
+    <table id="alertsTable">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Type</th>
+          <th>Contact</th>
+          <th>Détail</th>
+        </tr>
+      </thead>
+      <tbody id="alertsBody"></tbody>
+    </table>
+    <div id="alertsEmptyMsg" class="emptyMsg" style="display:none;">Aucune anomalie détectée.</div>
+  </div>
 </div>
 
 <script>
@@ -82,6 +114,26 @@
     if(!val){ return; }
     adminSecret = val;
     loadDrivers();
+    loadAlerts();
+  });
+
+  // ---- Onglets ----
+  var tabDrivers = document.getElementById('tabDrivers');
+  var tabAlerts = document.getElementById('tabAlerts');
+  var driversSection = document.getElementById('driversSection');
+  var alertsSection = document.getElementById('alertsSection');
+
+  tabDrivers.addEventListener('click', function(){
+    tabDrivers.classList.add('active');
+    tabAlerts.classList.remove('active');
+    driversSection.style.display = 'block';
+    alertsSection.style.display = 'none';
+  });
+  tabAlerts.addEventListener('click', function(){
+    tabAlerts.classList.add('active');
+    tabDrivers.classList.remove('active');
+    alertsSection.style.display = 'block';
+    driversSection.style.display = 'none';
   });
 
   function statusBadge(d){
@@ -178,6 +230,71 @@
   }
 
   document.getElementById('refreshBtn').addEventListener('click', loadDrivers);
+
+  // ---- Anomalies ----
+  var typeLabels = {
+    doublon_inscription: 'Doublon inscription',
+    echec_connexion: 'Échec connexion'
+  };
+
+  function alertContact(a){
+    var parts = [];
+    if(a.first_name || a.last_name) parts.push((a.first_name||'')+' '+(a.last_name||''));
+    if(a.email) parts.push(a.email);
+    if(a.phone) parts.push(a.phone);
+    return parts.join(' — ') || '—';
+  }
+
+  function countRepeats(alerts){
+    var counts = {};
+    alerts.forEach(function(a){
+      var key = (a.email||'') + '|' + (a.phone||'');
+      counts[key] = (counts[key]||0) + 1;
+    });
+    return counts;
+  }
+
+  function loadAlerts(){
+    call('list-alerts', { adminSecret: adminSecret }).then(function(data){
+      if(data.error){ return; }
+      renderAlerts(data.alerts || []);
+    }).catch(function(){});
+  }
+
+  function renderAlerts(alerts){
+    var badge = document.getElementById('alertsCountBadge');
+    badge.innerHTML = alerts.length ? '<span class="badge count">'+alerts.length+'</span>' : '';
+    document.getElementById('alertsCountLabel').textContent = alerts.length + ' anomalie(s)';
+
+    var table = document.getElementById('alertsTable');
+    var emptyMsg = document.getElementById('alertsEmptyMsg');
+    var body = document.getElementById('alertsBody');
+    body.innerHTML = '';
+
+    if(!alerts.length){
+      table.style.display = 'none';
+      emptyMsg.style.display = 'block';
+      return;
+    }
+    table.style.display = 'table';
+    emptyMsg.style.display = 'none';
+
+    var counts = countRepeats(alerts);
+
+    alerts.forEach(function(a){
+      var key = (a.email||'') + '|' + (a.phone||'');
+      var repeatCount = counts[key] || 1;
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td style="font-size:11px;">'+fmtDate(a.created_at)+'</td>' +
+        '<td>'+(typeLabels[a.type] || a.type)+(repeatCount>1 ? ' <span class="badge count">'+repeatCount+'×</span>' : '')+'</td>' +
+        '<td style="font-size:12px;">'+alertContact(a)+'</td>' +
+        '<td style="font-size:12px;color:var(--inkSoft);">'+(a.detail||'—')+'</td>';
+      body.appendChild(tr);
+    });
+  }
+
+  document.getElementById('refreshAlertsBtn').addEventListener('click', loadAlerts);
 })();
 </script>
 </body>
