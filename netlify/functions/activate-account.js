@@ -81,12 +81,10 @@ exports.handler = async (event) => {
         '✅ Nouvelle activation — RSE Transport',
         `Compte activé : ${row.last_name || ''} ${row.first_name || ''} (${cleanEmail})\nTéléphone : ${row.phone || '—'}\nAppareil (id local) : ${deviceId}\nDate : ${new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })}`
       );
-      return { statusCode: 200, body: JSON.stringify({ valid: true, firstActivation: true }) };
-    }
+      return { statusCode: 200, body: JSON.stringify({ valid: true, firstActivation: true, access_expires_at: row.access_expires_at, is_trial: row.is_trial }) };
 
     if (row.device_id === deviceId) {
-      return { statusCode: 200, body: JSON.stringify({ valid: true, firstActivation: false }) };
-    }
+      return { statusCode: 200, body: JSON.stringify({ valid: true, firstActivation: false, access_expires_at: row.access_expires_at, is_trial: row.is_trial }) };
 
     await notifyAdmin(
       '⚠️ Tentative sur un autre appareil — RSE Transport',
