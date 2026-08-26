@@ -65,8 +65,16 @@ exports.handler = async (event) => {
     }
 
     if (!verifyPassword(password, row.password_hash)) {
-      return { statusCode: 200, body: JSON.stringify({ valid: false, error: 'identifiants incorrects' }) };
-    }
+  try {
+    await supabase.from('security_alerts').insert({
+      type: 'echec_connexion',
+      email: cleanEmail,
+      device_id: deviceId,
+      detail: 'Mot de passe incorrect'
+    });
+  } catch (e) {}
+  return { statusCode: 200, body: JSON.stringify({ valid: false, error: 'Identifiants incorrects' }) };
+}
 
     if (row.access_expires_at && new Date(row.access_expires_at) < new Date()) {
       return { statusCode: 200, body: JSON.stringify({ valid: false, error: 'Votre accès (12€/365 jours) a expiré. Contactez Patoo pour le renouveler.' }) };
@@ -90,6 +98,14 @@ exports.handler = async (event) => {
       '⚠️ Tentative sur un autre appareil — RSE Transport',
       `Compte : ${row.last_name || ''} ${row.first_name || ''} (${cleanEmail})\nTéléphone : ${row.phone || '—'}\nAppareil déjà enregistré : ${row.device_id}\nNouvel appareil refusé : ${deviceId}\nDate : ${new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })}`
     );
+      try {
+  await supabase.from('security_alerts').insert({
+    type: 'echec_connexion',
+    email: cleanEmail,
+    device_id: deviceId,
+    detail: 'Tentative de connexion depuis un appareil différent de celui enregistré'
+  });
+} catch (e) {}
     return { statusCode: 200, body: JSON.stringify({ valid: false, error: 'compte déjà activé sur un autre appareil' }) };
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ valid: false, error: err.message }) };
