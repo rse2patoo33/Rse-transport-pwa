@@ -52,13 +52,25 @@ exports.handler = async (event) => {
 
     const { data: existing } = await supabase
       .from('activation_accounts')
-      .select('email')
-      .eq('email', cleanEmail)
-      .single();
+    const { data: existing } = await supabase
+  .from('activation_accounts')
+  .select('email, phone, first_name, last_name')
+  .or(`email.eq.${cleanEmail},phone.eq.${cleanPhone},and(first_name.ilike.${cleanFirst},last_name.ilike.${cleanLast})`)
+  .maybeSingle();
 
-    if (existing) {
-      return { statusCode: 200, body: JSON.stringify({ valid: false, error: 'Cet email a déjà un compte. Utilisez plutôt "Se connecter".' }) };
-    }
+if (existing) {
+  try {
+    await supabase.from('security_alerts').insert({
+      type: 'doublon_inscription',
+      email: cleanEmail,
+      phone: cleanPhone,
+      first_name: cleanFirst,
+      last_name: cleanLast,
+      detail: `Tentative de réinscription — compte existant trouvé pour email=${existing.email}, phone=${existing.phone||'-'}, nom=${existing.first_name||'-'} ${existing.last_name||'-'}`
+    });
+  } catch (e) {}
+  return { statusCode: 200, body: JSON.stringify({ valid: false, error: 'Un compte existe déjà avec cet email, ce numéro ou ce nom/prénom. Contactez l\'administrateur.' }) };
+}
 
     const approvalToken = crypto.randomBytes(24).toString('hex');
 
