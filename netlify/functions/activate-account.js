@@ -105,7 +105,7 @@ exports.handler = async (event) => {
     detail: 'Tentative de connexion depuis un appareil différent de celui enregistré'
   });
 } catch (e) {}
-    return { statusCode: 200, body: JSON.stringify({ valid: false, error: 'compte déjà activé sur un autre appareil' }) };
+    return { statusCode: 200, body: JSON.stringify({ valid: false, error: 'Compte déjà activé sur un autre appareil. Contactez rse2patoo@gmail.com si besoin.' }) };
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ valid: false, error: err.message }) };
   }
