@@ -76,7 +76,7 @@ exports.handler = async (event) => {
 }
 
     if (row.access_expires_at && new Date(row.access_expires_at) < new Date()) {
-      return { statusCode: 200, body: JSON.stringify({ valid: false, error: 'Votre accès (25€/365 jours) a expiré. Contactez Patoo pour le renouveler.' }) };
+      return { statusCode: 200, body: JSON.stringify({ valid: false, error: 'Votre accès (25€/365 jours) a expiré. Contactez rse2patoo@gmail.com pour le renouveler.' }) };
     }
 
     if (!row.used) {
