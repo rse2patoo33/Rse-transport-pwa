@@ -61,9 +61,8 @@ exports.handler = async (event) => {
     }
 
     if (row.revoked) {
-      return { statusCode: 200, body: JSON.stringify({ valid: false, error: 'compte révoqué' }) };
-    }
-
+  return { statusCode: 200, body: JSON.stringify({ valid: false, error: 'Compte révoqué. Contactez rse2patoo@gmail.com pour plus d\'informations.' }) };
+}
     if (!verifyPassword(password, row.password_hash)) {
   try {
     await supabase.from('security_alerts').insert({
