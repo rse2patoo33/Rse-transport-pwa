@@ -429,8 +429,7 @@
         .then(function(r){ return r.json(); })
         .then(function(data){
           if(data.valid){
-            localStorage.setItem(ACCESS_KEY, JSON.stringify({ email: email, deviceId: getDeviceId(), valid: true }));
-            revealApp();
+            localStorage.setItem(ACCESS_KEY, JSON.stringify({ email: email, deviceId: getDeviceId(), valid: true, accessExpiresAt: data.access_expires_at, isTrial: data.is_trial }));
           } else {
             showMsg(data.error || 'Code incorrect.', true);
           }
@@ -454,8 +453,8 @@
       })
         .then(function(r){ return r.json(); })
         .then(function(data){
-          if(data.valid){
-            localStorage.setItem(ACCESS_KEY, JSON.stringify({ email: email, deviceId: getDeviceId(), valid: true }));
+          localStorage.setItem(ACCESS_KEY, JSON.stringify({ email: email, deviceId: getDeviceId(), valid: true, accessExpiresAt: data.access_expires_at, isTrial: data.is_trial }));
+      
             revealApp();
           } else {
             showMsg(data.error || 'Accès refusé.', true);
