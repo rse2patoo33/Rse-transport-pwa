@@ -178,9 +178,9 @@
         '<td>'+statusBadge(d)+'</td>' +
         '<td style="font-size:11px;">'+(d.device_id ? 'Verrouillé' : '—')+'</td>' +
         '<td style="font-size:11px;">'+fmtDate(d.access_expires_at)+'</td>' +
-        '<td id="actions_'+btoa(d.email)+'"></td>';
+        '<td></td>';
       body.appendChild(tr);
-      var actionsCell = tr.querySelector('#actions_'+btoa(d.email));
+    var actionsCell = tr.lastElementChild;
       addActionButtons(actionsCell, d);
     });
   }
