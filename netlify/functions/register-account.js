@@ -50,8 +50,7 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ valid: false, error: 'Numéro de téléphone invalide.' }) };
     }
 
-    const { data: existing } = await supabase
-      .from('activation_accounts')
+    
     const { data: existing } = await supabase
   .from('activation_accounts')
   .select('email, phone, first_name, last_name')
