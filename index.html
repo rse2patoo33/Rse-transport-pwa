@@ -229,7 +229,8 @@
   <div class="wrap">
     <div class="topbar">
       <div class="eyebrow">🚚 RSE TRANSPORT</div>
-      <div style="display:flex;gap:10px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+      <span id="accessCounter" class="mono" style="font-size:11px;color:var(--inkSoft);"></span>
         <button class="resetBtn" id="settingsBtn">⚙️ Réglages</button>
         <button class="resetBtn" id="resetBtn">↺ Nouvelle journée</button>
       </div>
@@ -321,10 +322,32 @@
       return id;
     }
 
-    function revealApp(){
-      document.getElementById('activation').style.display = 'none';
-      document.getElementById('mainApp').style.display = 'block';
-    }
+    function renderAccessCounter(){
+        var el = document.getElementById('accessCounter');
+        if(!el) return;
+        var cached = null;
+        try{ cached = JSON.parse(localStorage.getItem(ACCESS_KEY) || 'null'); }catch(e){}
+        if(!cached || !cached.accessExpiresAt){ el.textContent=''; return; }
+        var expires = new Date(cached.accessExpiresAt);
+        var now = new Date();
+        var diffDays = Math.ceil((expires - now) / 86400000);
+        if(diffDays < 0){
+          el.textContent = '🔒 accès expiré';
+          el.style.color = 'var(--violation)';
+        } else if(diffDays <= 15){
+          el.textContent = '🔒 dans ' + diffDays + 'j';
+          el.style.color = 'var(--alerte)';
+        } else {
+          el.textContent = '🔒 dans ' + diffDays + 'j';
+          el.style.color = 'var(--inkSoft)';
+        }
+      }
+
+      function revealApp(){
+        document.getElementById('activation').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        renderAccessCounter();
+      }
 
     function showActivationScreen(){
       document.getElementById('mainApp').style.display = 'none';
