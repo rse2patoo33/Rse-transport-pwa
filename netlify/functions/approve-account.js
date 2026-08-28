@@ -62,6 +62,7 @@ exports.handler = async (event) => {
     if (action === 'approve') {
       const code = Math.floor(100000 + Math.random() * 900000).toString();
       const codeExpires = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(); // 48h pour saisir le code
+      const accessExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // essai gratuit 7 jours
 
       await supabase
         .from('activation_accounts')
@@ -70,6 +71,8 @@ exports.handler = async (event) => {
           activation_code: code,
           code_expires_at: codeExpires,
           approval_token: null,
+          access_expires_at: accessExpires,
+          is_trial: true,
         })
         .eq('email', cleanEmail);
 
