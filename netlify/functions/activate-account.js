@@ -61,19 +61,20 @@ exports.handler = async (event) => {
     }
 
     if (row.revoked) {
-  return { statusCode: 200, body: JSON.stringify({ valid: false, error: 'Compte révoqué. Contactez rse2patoo@gmail.com pour plus d\'informations.' }) };
-}
+      return { statusCode: 200, body: JSON.stringify({ valid: false, error: 'Compte révoqué. Contactez rse2patoo@gmail.com pour plus d\'informations.' }) };
+    }
+
     if (!verifyPassword(password, row.password_hash)) {
-  try {
-    await supabase.from('security_alerts').insert({
-      type: 'echec_connexion',
-      email: cleanEmail,
-      device_id: deviceId,
-      detail: 'Mot de passe incorrect'
-    });
-  } catch (e) {}
-  return { statusCode: 200, body: JSON.stringify({ valid: false, error: 'Identifiants incorrects' }) };
-}
+      try {
+        await supabase.from('security_alerts').insert({
+          type: 'echec_connexion',
+          email: cleanEmail,
+          device_id: deviceId,
+          detail: 'Mot de passe incorrect'
+        });
+      } catch (e) {}
+      return { statusCode: 200, body: JSON.stringify({ valid: false, error: 'Identifiants incorrects' }) };
+    }
 
     if (row.access_expires_at && new Date(row.access_expires_at) < new Date()) {
       return { statusCode: 200, body: JSON.stringify({ valid: false, error: 'Votre accès (25€/365 jours) a expiré. Contactez rse2patoo@gmail.com pour le renouveler.' }) };
@@ -89,22 +90,24 @@ exports.handler = async (event) => {
         `Compte activé : ${row.last_name || ''} ${row.first_name || ''} (${cleanEmail})\nTéléphone : ${row.phone || '—'}\nAppareil (id local) : ${deviceId}\nDate : ${new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })}`
       );
       return { statusCode: 200, body: JSON.stringify({ valid: true, firstActivation: true, access_expires_at: row.access_expires_at, is_trial: row.is_trial }) };
+    }
 
     if (row.device_id === deviceId) {
       return { statusCode: 200, body: JSON.stringify({ valid: true, firstActivation: false, access_expires_at: row.access_expires_at, is_trial: row.is_trial }) };
+    }
 
     await notifyAdmin(
       '⚠️ Tentative sur un autre appareil — RSE Transport',
       `Compte : ${row.last_name || ''} ${row.first_name || ''} (${cleanEmail})\nTéléphone : ${row.phone || '—'}\nAppareil déjà enregistré : ${row.device_id}\nNouvel appareil refusé : ${deviceId}\nDate : ${new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })}`
     );
-      try {
-  await supabase.from('security_alerts').insert({
-    type: 'echec_connexion',
-    email: cleanEmail,
-    device_id: deviceId,
-    detail: 'Tentative de connexion depuis un appareil différent de celui enregistré'
-  });
-} catch (e) {}
+    try {
+      await supabase.from('security_alerts').insert({
+        type: 'echec_connexion',
+        email: cleanEmail,
+        device_id: deviceId,
+        detail: 'Tentative de connexion depuis un appareil différent de celui enregistré'
+      });
+    } catch (e) {}
     return { statusCode: 200, body: JSON.stringify({ valid: false, error: 'Compte déjà activé sur un autre appareil. Contactez rse2patoo@gmail.com si besoin.' }) };
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ valid: false, error: err.message }) };
