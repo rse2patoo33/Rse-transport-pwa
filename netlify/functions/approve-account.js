@@ -55,7 +55,10 @@ exports.handler = async (event) => {
     }
 
     if (action === 'reject') {
-      await supabase.from('activation_accounts').delete().eq('email', cleanEmail);
+      const { error: delError } = await supabase.from('activation_accounts').delete().eq('email', cleanEmail);
+      if (delError) {
+        return page('❌ Erreur base de données', `Le refus n'a pas pu être enregistré : ${delError.message}`, '#D9603F');
+      }
       return page('❌ Inscription refusée', `L'inscription de ${row.first_name} ${row.last_name} a été refusée et supprimée.`, '#D9603F');
     }
 
@@ -64,7 +67,7 @@ exports.handler = async (event) => {
       const codeExpires = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(); // 48h pour saisir le code
       const accessExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // essai gratuit 7 jours
 
-      await supabase
+      const { error: updateError } = await supabase
         .from('activation_accounts')
         .update({
           approved: true,
@@ -75,6 +78,10 @@ exports.handler = async (event) => {
           is_trial: true,
         })
         .eq('email', cleanEmail);
+
+      if (updateError) {
+        return page('❌ Erreur base de données', `L'approbation n'a pas pu être enregistrée : ${updateError.message}`, '#D9603F');
+      }
 
       await sendEmail(
         cleanEmail,
