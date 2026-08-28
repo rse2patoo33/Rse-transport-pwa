@@ -395,9 +395,6 @@ document.addEventListener('visibilitychange', () => {
       revealApp();
     } else {
       showActivationScreen();
-      if(localStorage.getItem('rse_patoo_pending_email')){
-        showCodeTab();
-      }
     }
 
     var msgEl = document.getElementById('licenseMsg');
@@ -431,6 +428,10 @@ document.addEventListener('visibilitychange', () => {
     tabCode.addEventListener('click', showCodeTab);
     var registerForm = document.getElementById('registerForm');
     var loginForm = document.getElementById('loginForm');
+
+    if(!(cached && cached.valid && cached.deviceId === getDeviceId()) && localStorage.getItem('rse_patoo_pending_email')){
+      showCodeTab();
+    }
 
     tabRegister.addEventListener('click', function(){
       tabRegister.classList.add('authTabActive');
