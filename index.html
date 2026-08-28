@@ -343,6 +343,34 @@
         }
       }
 
+    async function verifyAccessOnOpen(){
+  var cached = null;
+  try{ cached = JSON.parse(localStorage.getItem(ACCESS_KEY) || 'null'); }catch(e){}
+  if(!cached || !cached.email) return;
+
+  try{
+    var res = await fetch('/.netlify/functions/check-access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: cached.email, deviceId: getDeviceId() })
+    });
+    var data = await res.json();
+
+    if(data.status === 'blocked'){
+      localStorage.removeItem(ACCESS_KEY);
+      showActivationScreen();
+      return;
+    }
+
+    if(data.status === 'active' && data.access_expires_at){
+      cached.accessExpiresAt = data.access_expires_at;
+      localStorage.setItem(ACCESS_KEY, JSON.stringify(cached));
+      renderAccessCounter();
+    }
+  }catch(e){
+    // pas de réseau : on laisse l'app fonctionner avec l'état local
+  }
+}
 window.addEventListener('load', verifyAccessOnOpen);
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') verifyAccessOnOpen();
