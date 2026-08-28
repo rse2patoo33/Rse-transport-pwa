@@ -104,9 +104,9 @@ if (existing) {
     await sendEmail(
       process.env.ADMIN_NOTIFY_EMAIL,
       '🆕 Nouvelle inscription à valider — RSE Transport',
-      `Nouveau chauffeur en attente de validation :\n\nNom : ${cleanLast}\nPrénom : ${cleanFirst}\nTéléphone : ${cleanPhone}\nEmail : ${cleanEmail}\nDate : ${new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })}\n\n⚠️ Vérifiez la réception du virement de 12€ (référence attendue : ${cleanLast} ${cleanFirst}) avant d'approuver.\n\nApprouver : ${approveUrl}\nRefuser : ${rejectUrl}`,
+      `Nouveau chauffeur en attente de validation :\n\nNom : ${cleanLast}\nPrénom : ${cleanFirst}\nTéléphone : ${cleanPhone}\nEmail : ${cleanEmail}\nDate : ${new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })}\n\n⚠️ Vérifiez la réception du virement de 25€ (référence attendue : ${cleanLast} ${cleanFirst}) avant d'approuver.\n\nApprouver : ${approveUrl}\nRefuser : ${rejectUrl}`,
       `<p>Nouveau chauffeur en attente de validation :</p>
-       <p><b>⚠️ Vérifiez la réception du virement de 12€ (référence attendue : ${cleanLast} ${cleanFirst}) avant d'approuver.</b></p>
+       <p><b>⚠️ Vérifiez la réception du virement de 25€ (référence attendue : ${cleanLast} ${cleanFirst}) avant d'approuver.</b></p>
        <p><b>Nom :</b> ${cleanLast}<br><b>Prénom :</b> ${cleanFirst}<br><b>Téléphone :</b> ${cleanPhone}<br><b>Email :</b> ${cleanEmail}</p>
        <p>
          <a href="${approveUrl}" style="background:#4F9C6E;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:bold;">✅ Approuver</a>
@@ -118,7 +118,7 @@ if (existing) {
     await sendEmail(
       cleanEmail,
       'Inscription reçue — RSE Transport Patoo',
-      `Bonjour ${cleanFirst},\n\nVotre inscription a bien été reçue et est en cours de validation par Patoo. Vous recevrez un code d'activation par email dès qu'elle sera approuvée.\n\nRSE Transport — Patoo`
+      `Bonjour ${cleanFirst},\n\nVotre inscription a bien été reçue et est en cours de validation par Patoo. Vous recevrez un code d'activation par email pour l'activation des 7j en gratuités, les 365j à la réception de votre virement des 25€.\n\nRSE Transport — Patoo`
     );
 
     return { statusCode: 200, body: JSON.stringify({ valid: true, pendingApproval: true }) };
