@@ -343,6 +343,11 @@
         }
       }
 
+window.addEventListener('load', verifyAccessOnOpen);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') verifyAccessOnOpen();
+});
+    
       function revealApp(){
         document.getElementById('activation').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
