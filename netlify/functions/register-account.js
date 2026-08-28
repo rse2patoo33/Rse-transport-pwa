@@ -49,7 +49,16 @@ exports.handler = async (event) => {
     if ((cleanPhone.match(/\d/g) || []).length < 8) {
       return { statusCode: 400, body: JSON.stringify({ valid: false, error: 'Numéro de téléphone invalide.' }) };
     }
+    
+const { data: blacklisted } = await supabase
+      .from('revoked_blacklist')
+      .select('email')
+      .or(`email.eq.${cleanEmail},phone.eq.${cleanPhone},and(first_name.ilike.${cleanFirst},last_name.ilike.${cleanLast})`)
+      .maybeSingle();
 
+    if (blacklisted) {
+      return { statusCode: 200, body: JSON.stringify({ valid: false, error: 'Inscription refusée. Contactez rse2patoo@gmail.com pour plus d\'informations.' }) };
+    }
     
     const { data: existing } = await supabase
   .from('activation_accounts')
