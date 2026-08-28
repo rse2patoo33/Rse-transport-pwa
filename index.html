@@ -154,6 +154,7 @@
     <div style="display:flex;gap:8px;margin-bottom:18px;">
       <button id="tabRegister" class="authTab authTabActive">Créer un compte</button>
       <button id="tabLogin" class="authTab">Se connecter</button>
+      <button id="tabCode" class="authTab">Code activation</button>
     </div>
 
     <div id="registerForm">
@@ -394,6 +395,9 @@ document.addEventListener('visibilitychange', () => {
       revealApp();
     } else {
       showActivationScreen();
+      if(localStorage.getItem('rse_patoo_pending_email')){
+        showCodeTab();
+      }
     }
 
     var msgEl = document.getElementById('licenseMsg');
@@ -406,6 +410,25 @@ document.addEventListener('visibilitychange', () => {
     // ---- Bascule entre les onglets Inscription / Connexion ----
     var tabRegister = document.getElementById('tabRegister');
     var tabLogin = document.getElementById('tabLogin');
+    var tabCode = document.getElementById('tabCode');
+
+    function showCodeTab(){
+      tabRegister.classList.remove('authTabActive');
+      tabLogin.classList.remove('authTabActive');
+      tabCode.classList.add('authTabActive');
+      registerForm.style.display = 'none';
+      loginForm.style.display = 'none';
+      tabRegister.style.display = 'none';
+      tabLogin.style.display = 'none';
+      msgEl.style.display = 'none';
+      var pendingEmail = localStorage.getItem('rse_patoo_pending_email');
+      if(pendingEmail){
+        document.getElementById('codeEmailDisplay').textContent = pendingEmail;
+        document.getElementById('codeForm').dataset.email = pendingEmail;
+      }
+      document.getElementById('codeForm').style.display = 'block';
+    }
+    tabCode.addEventListener('click', showCodeTab);
     var registerForm = document.getElementById('registerForm');
     var loginForm = document.getElementById('loginForm');
 
@@ -461,6 +484,7 @@ document.addEventListener('visibilitychange', () => {
             document.getElementById('codeEmailDisplay').textContent = email;
             document.getElementById('codeForm').style.display = 'block';
             document.getElementById('codeForm').dataset.email = email;
+            localStorage.setItem('rse_patoo_pending_email', email);
           } else {
             showMsg(data.error || 'Inscription refusée.', true);
           }
@@ -486,6 +510,8 @@ document.addEventListener('visibilitychange', () => {
         .then(function(data){
           if(data.valid){
             localStorage.setItem(ACCESS_KEY, JSON.stringify({ email: email, deviceId: getDeviceId(), valid: true, accessExpiresAt: data.access_expires_at, isTrial: data.is_trial }));
+            localStorage.removeItem('rse_patoo_pending_email');
+            revealApp();
           } else {
             showMsg(data.error || 'Code incorrect.', true);
           }
