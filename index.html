@@ -2065,6 +2065,11 @@ document.getElementById('dismissBtn').addEventListener('click', () => {
   document.getElementById('installBanner').style.display = 'none';
 });
 </script>
-
-</body>
+...
+});
+</script>        ← ligne 2067 (script existant)
+<div id="iosInstallOverlay">...</div>   ← ton nouveau bloc
+<script>...</script>                     ← ton nouveau bloc
+</body>             ← ligne 2068
 </html>
+
